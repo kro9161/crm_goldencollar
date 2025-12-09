@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useArchivedYear } from "../../hooks/useArchivedYear";
 
 type Group = { id: string; name: string; label?: string | null; academicYear?: { id: string; name: string; session: string } };
-type SubGroup = { id: string; code: string; label?: string | null; filiereId?: string | null; filiere?: Filiere };
+type SubGroup = { id: string; code: string; label?: string | null; subGroupFilieres?: { filiere: Filiere }[] };
 type Filiere = { id: string; code: string; label?: string | null; levelId?: string; level?: Level };
 type Level = { id: string; code: string; label?: string | null };
 
@@ -169,8 +169,8 @@ export default function GroupsPage() {
       });
       if (!res.ok) throw new Error("Erreur chargement sous-groupe");
       const sg = await res.json();
-      // On attend que le backend renvoie filiere (objet ou null)
-      setFilieres(sg.filiere ? [sg.filiere] : []);
+      // On attend que le backend renvoie subGroupFilieres: [{ filiere }]
+      setFilieres(sg.subGroupFilieres ? sg.subGroupFilieres.map((sf: any) => sf.filiere) : []);
     } catch {
       setError("Erreur chargement filières");
     }
@@ -215,13 +215,14 @@ export default function GroupsPage() {
   };
 
   const deleteFiliere = async (filiereId: string) => {
+    if (!selectedSubGroupId) return;
     try {
-      const res = await fetch(`http://localhost:4000/filieres/${filiereId}`, {
+      const res = await fetch(`http://localhost:4000/subgroups/${selectedSubGroupId}/filieres/${filiereId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("failed");
-      if (selectedSubGroupId) await loadFilieres();
+      await loadFilieres();
     } catch {
       setError("Erreur suppression filière");
     }

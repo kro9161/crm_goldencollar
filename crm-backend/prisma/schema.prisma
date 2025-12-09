@@ -1,4 +1,19 @@
 // ---------------------------------------------------
+//  JUNCTION TABLE: SubGroupFilieres
+// ---------------------------------------------------
+
+model SubGroupFiliere {
+  subGroupId String
+  filiereId  String
+
+  subGroup SubGroup @relation("SubGroupToSubGroupFiliere", fields: [subGroupId], references: [id])
+  filiere  Filiere  @relation("FiliereToSubGroupFiliere", fields: [filiereId], references: [id])
+
+  assignedAt DateTime @default(now())
+
+  @@id([subGroupId, filiereId])
+}
+// ---------------------------------------------------
 //  PRISMA SCHEMA — CRM École V1 COMPLET
 // ---------------------------------------------------
 
@@ -149,8 +164,7 @@ model SubGroup {
   groupId String
   group   Group  @relation(fields: [groupId], references: [id])
 
-  filiereId String?
-  filiere   Filiere?   @relation("SubGroupFiliere", fields: [filiereId], references: [id], onDelete: SetNull)
+    subGroupFilieres SubGroupFiliere[] @relation("SubGroupToSubGroupFiliere")
 
   students User[]   @relation("UserSubGroups")
   courses  Course[] @relation("CourseSubGroups")
@@ -163,7 +177,6 @@ model SubGroup {
   deletedAt DateTime?
 
   @@unique([groupId, code, deletedAt])
-  @@index([filiereId])
 }
 
 model Filiere {
@@ -180,7 +193,7 @@ model Filiere {
   // Relations
   users     User[]      @relation("UserFilieres")
   courses   Course[]    @relation("FiliereCourses")
-  subGroups SubGroup[]  @relation("SubGroupFiliere")
+    subGroupFilieres SubGroupFiliere[] @relation("FiliereToSubGroupFiliere")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
