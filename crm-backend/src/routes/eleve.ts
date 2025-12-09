@@ -51,28 +51,28 @@ router.get("/planning/:id", async (req: any, res) => {
           where: { deletedAt: null },
           include: {
             subGroupFilieres: {
-              include: { filiere: { where: { deletedAt: null } } }
+              include: { filiere: true }
             }
           }
         }
       }
     });
 
-    console.log("📚 Élève trouvé:", {
-      id: student?.id,
-      subGroups: student?.subGroups.length
-    });
-
-    if (!student) {
-      console.log("❌ Élève non trouvé:", studentId);
-      return res.status(404).json({ error: "Élève non trouvé" });
+    if (!student || !student.subGroups) {
+      console.log("❌ Élève non trouvé ou sous-groupes manquants:", studentId);
+      return res.status(404).json({ error: "Élève ou sous-groupes non trouvés" });
     }
 
-    // Récupérer tous les filiereIds via les sous-groupes de l'élève
-    const filiereIds = student.subGroups.flatMap(sg =>
-      sg.subGroupFilieres?.map(sgf => sgf.filiere?.id).filter(Boolean) || []
-    );
-    const subGroupIds = student.subGroups.map(sg => sg.id);
+    console.log("📚 Élève trouvé:", {
+      id: student.id,
+      subGroups: student.subGroups.length
+    });
+
+    // Récupérer tous les filiereIds via les sous-groupes de l'élève (en filtrant les filières supprimées)
+    const filiereIds = student.subGroups?.flatMap(sg =>
+      sg.subGroupFilieres?.filter(sgf => sgf.filiere && !sgf.filiere.deletedAt).map(sgf => sgf.filiere.id) || []
+    ) || [];
+    const subGroupIds = student.subGroups?.map(sg => sg.id) || [];
 
     console.log("🔍 Recherche sessions avec:", {
       filiereIds: filiereIds.length,

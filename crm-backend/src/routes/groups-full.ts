@@ -39,8 +39,6 @@ router.get("/full", async (_req, res) => {
         id: sg.id,
         code: sg.code,
         label: sg.label,
-        level: sg.level,
-        session: sg.session,
         studentsCount: sg.students.length,
       })),
     }));
