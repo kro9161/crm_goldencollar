@@ -42,24 +42,24 @@ router.get("/planning/:id", async (req: any, res) => {
       academicYearId = currentYear.id;
     }
 
-    // 1️⃣ Récupérer l'élève et ses sous-groupes/filières pour l'année cible
+
+    // 1️⃣ Récupérer l'élève et ses sous-groupes pour l'année cible
     const student = await prisma.user.findUnique({
       where: { id: studentId, role: "eleve" },
       include: {
-        filieres: {
-          where: { deletedAt: null },
-          select: { id: true, code: true }
-        },
         subGroups: {
           where: { deletedAt: null },
-          select: { id: true, code: true }
+          include: {
+            subGroupFilieres: {
+              include: { filiere: { where: { deletedAt: null } } }
+            }
+          }
         }
       }
     });
 
     console.log("📚 Élève trouvé:", {
       id: student?.id,
-      filieres: student?.filieres.length,
       subGroups: student?.subGroups.length
     });
 
@@ -68,7 +68,10 @@ router.get("/planning/:id", async (req: any, res) => {
       return res.status(404).json({ error: "Élève non trouvé" });
     }
 
-    const filiereIds = student.filieres.map(f => f.id);
+    // Récupérer tous les filiereIds via les sous-groupes de l'élève
+    const filiereIds = student.subGroups.flatMap(sg =>
+      sg.subGroupFilieres?.map(sgf => sgf.filiere?.id).filter(Boolean) || []
+    );
     const subGroupIds = student.subGroups.map(sg => sg.id);
 
     console.log("🔍 Recherche sessions avec:", {
@@ -94,17 +97,18 @@ router.get("/planning/:id", async (req: any, res) => {
 
     // 2️⃣ Récupérer toutes les sessions de cours liées aux filières/sous-groupes de l'élève et à l'année
     const sessions = await prisma.courseSession.findMany({
+
       where: {
         deletedAt: null,
         course: { academicYearId, deletedAt: null },
         OR: [
           // Sessions liées au sous-groupe de l'élève
           { targetSubGroupId: { in: subGroupIdsForYear } },
-          // Sessions liées aux cours de ses filières
+          // Sessions liées aux cours des sous-groupes de l'élève
           {
             course: {
-              filiere: {
-                id: { in: filiereIds }
+              subGroups: {
+                some: { id: { in: subGroupIdsForYear } }
               }
             }
           }
@@ -116,7 +120,14 @@ router.get("/planning/:id", async (req: any, res) => {
           select: {
             id: true,
             name: true,
-            filiere: { select: { id: true, code: true, label: true } },
+            subGroups: {
+              select: {
+                id: true,
+                subGroupFilieres: {
+                  include: { filiere: { select: { id: true, code: true, label: true } } }
+                }
+              }
+            },
             professors: {
               select: { id: true, firstName: true, lastName: true }
             }
@@ -145,8 +156,13 @@ router.get("/planning/:id", async (req: any, res) => {
         professor: s.professor,
         salleName: s.salle?.name,
         targetSubGroup: s.targetSubGroup?.code,
-        filiere: s.course?.filiere?.code,
-        niveau: s.course?.filiere?.label,
+        filieres: s.course?.subGroups?.flatMap(sg =>
+          sg.subGroupFilieres?.map(sgf => ({
+            id: sgf.filiere?.id,
+            code: sgf.filiere?.code,
+            label: sgf.filiere?.label
+          })) || []
+        ) || [],
       }
     }));
 
@@ -181,6 +197,7 @@ router.get("/", async (req, res) => {
       console.log("✅ Année courante sélectionnée :", academicYearId);
     }
 
+
     const enrollments = await prisma.studentEnrollment.findMany({
       where: {
         academicYearId,
@@ -194,10 +211,9 @@ router.get("/", async (req, res) => {
               where: { deletedAt: null },
               include: {
                 group: true,
-                filiere: true,
+                subGroupFilieres: { include: { filiere: true } },
               },
             },
-            filieres: true,
           },
         },
       },
@@ -222,7 +238,7 @@ router.get("/", async (req, res) => {
  */
 router.post("/", async (req, res) => {
   try {
-    const { email, firstName, lastName, subGroupId, filiereIds, academicYearId } = req.body;
+    const { email, firstName, lastName, subGroupId, academicYearId } = req.body;
 
     if (!email || !firstName || !lastName) {
       return res.status(400).json({ error: "Champs obligatoires manquants" });
@@ -260,6 +276,7 @@ router.post("/", async (req, res) => {
 
     console.log("✅ Création élève sur année:", targetYearId);
 
+
     const created = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
@@ -271,13 +288,9 @@ router.post("/", async (req, res) => {
           subGroups: subGroupId 
             ? { connect: { id: subGroupId } }
             : undefined,
-          filieres: filiereIds?.length
-            ? { connect: filiereIds.map((id: string) => ({ id })) }
-            : undefined,
         },
         include: {
-          subGroups: { include: { group: true } },
-          filieres: true,
+          subGroups: { include: { group: true, subGroupFilieres: { include: { filiere: true } } } },
         }
       });
 
@@ -311,7 +324,8 @@ router.post("/", async (req, res) => {
  */
 router.patch("/:id", async (req, res) => {
   try {
-    const { firstName, lastName, email, subGroupId, filiereIds } = req.body;
+    const { firstName, lastName, email, subGroupId } = req.body;
+
 
     const updated = await prisma.user.update({
       where: { id: req.params.id },
@@ -326,21 +340,12 @@ router.patch("/:id", async (req, res) => {
                 : { set: [] }
             }
           : {}
-        ),
-        ...(filiereIds !== undefined
-          ? {
-              filieres: filiereIds.length
-                ? { set: [], connect: filiereIds.map((id: string) => ({ id })) }
-                : { set: [] }
-            }
-          : {}
         )
       },
       include: {
         subGroups: {
-          include: { group: true },
+          include: { group: true, subGroupFilieres: { include: { filiere: true } } },
         },
-        filieres: true,
       },
     });
 

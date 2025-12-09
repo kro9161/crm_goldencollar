@@ -40,9 +40,14 @@ router.get("/planning", async (req: AuthedRequest, res) => {
       include: {
         course: {
           include: {
-            filiere: {
+            subGroups: {
               include: {
-                users: {
+                subGroupFilieres: {
+                  include: {
+                    filiere: true
+                  }
+                },
+                students: {
                   where: { role: "eleve", deletedAt: null },
                   select: {
                     id: true,
@@ -50,7 +55,7 @@ router.get("/planning", async (req: AuthedRequest, res) => {
                     lastName: true,
                   },
                 },
-              },
+              }
             },
           },
         },
@@ -75,19 +80,11 @@ router.get("/planning", async (req: AuthedRequest, res) => {
       },
     });
 
+
     // 📦 Formatage pour FullCalendar
     const formatted = sessions.map((s) => {
-      // 🔥 Élèves : soit du targetSubGroup, soit de la filière du cours
-      const students = s.targetSubGroup?.students?.length
-        ? s.targetSubGroup.students
-        : s.course.filiere?.users ?? [];
-
-      console.log(`📚 Session ${s.id} - Cours: ${s.course.name}`);
-      console.log(`   - Filière: ${s.course.filiere?.code}`);
-      console.log(`   - TargetSubGroup: ${s.targetSubGroup?.id}`);
-      console.log(`   - Nb élèves filière: ${s.course.filiere?.users?.length ?? 0}`);
-      console.log(`   - Nb élèves subGroup: ${s.targetSubGroup?.students?.length ?? 0}`);
-      console.log(`   - Total élèves retournés: ${students.length}`);
+      // 🔥 Élèves : tous les élèves des sous-groupes liés au cours
+      const students = s.course.subGroups?.flatMap(sg => sg.students || []) || [];
 
       return {
         id: s.id,
@@ -102,7 +99,7 @@ router.get("/planning", async (req: AuthedRequest, res) => {
           course: s.course,
           professor: s.professor,
           salle: s.salle,
-          students: students, // 🔥 ICI : les élèves de la filière ou du sous-groupe
+          students: students, // 🔥 ICI : les élèves des sous-groupes du cours
         },
         backgroundColor: "#2563eb",
         borderColor: "#1e3a8a",

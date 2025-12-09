@@ -264,23 +264,7 @@ router.post("/", async (req, res) => {
  */
 router.patch("/:id", async (req, res) => {
   try {
-
-    const { code, label, groupId, filiereId } = req.body;
-
-
-    // Si filiereId fourni, vérifier qu'elle n'est pas déjà liée à un autre sous-groupe actif (hors ce sous-groupe)
-    if (filiereId) {
-      const existing = await prisma.subGroup.findFirst({
-        where: {
-          filiereId,
-          id: { not: req.params.id },
-          deletedAt: null,
-        },
-      });
-      if (existing) {
-        return res.status(400).json({ error: "Cette filière est déjà liée à un autre sous-groupe." });
-      }
-    }
+    const { code, label, groupId } = req.body;
 
     const updated = await prisma.subGroup.update({
       where: { id: req.params.id },
@@ -288,9 +272,8 @@ router.patch("/:id", async (req, res) => {
         ...(code !== undefined ? { code } : {}),
         ...(label !== undefined ? { label } : {}),
         ...(groupId !== undefined ? { groupId } : {}),
-        ...(filiereId !== undefined ? { filiereId: filiereId || null } : {}),
       },
-      include: { group: true, filiere: true },
+      include: { group: true, subGroupFilieres: { include: { filiere: true } }, students: true, courses: true, targetSessions: true, mainEnrollments: true },
     });
 
     res.json(updated);
