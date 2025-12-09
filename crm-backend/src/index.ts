@@ -123,6 +123,30 @@ app.use("/levels", levelsRouter);
 
 // Démarrage du serveur
 const port = process.env.PORT || 4000;
+
+app.get("/setup-admin", async (req, res) => {
+  try {
+    const bcrypt = await import("bcryptjs");
+    const hash = bcrypt.default.hashSync("Admin123!", 10);
+
+    const admin = await prisma.user.upsert({
+      where: { email: "admin@school.local" },
+      update: {},
+      create: {
+        email: "admin@school.local",
+        password: hash,
+        firstName: "Admin",
+        lastName: "Root",
+        role: "admin",
+      },
+    });
+
+    res.json({ ok: true, admin });
+  } catch (err) {
+    res.status(500).json({ error: err });
+  }
+});
+
 app.listen(port, () =>
   console.log(`🚀 API running at http://localhost:${port}`)
 );
