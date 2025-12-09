@@ -24,7 +24,7 @@ export default function AdministratifDashboard() {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:4000/users", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Erreur de chargement des utilisateurs");
@@ -45,7 +45,7 @@ export default function AdministratifDashboard() {
     setTempPassword("");
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:4000/users", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

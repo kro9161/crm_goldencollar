@@ -70,11 +70,9 @@ export default function EleveDashboard() {
         console.log("📅 Planning response status:", res.status);
         return res.json();
       })
-      .then((data) => {
+      .then((data: Array<{ id: string; start: string; end: string; title: string; extendedProps?: { courseName?: string; salleName?: string } }>) => {
         console.log("📅 Planning data:", data);
-        // Les données du backend sont déjà formatées pour FullCalendar
-        // On les convertit au format que le composant attend
-        setPlanning(data.map((event: any) => ({
+        setPlanning(data.map((event) => ({
           id: event.id,
           matiere: event.extendedProps?.courseName || event.title,
           date: new Date(event.start).toLocaleDateString(),
@@ -119,7 +117,7 @@ export default function EleveDashboard() {
         )
       )
       .catch(console.error);
-  }, []);
+  }, [academicYearId]);
 
   return (
     <div className="p-8 min-h-screen bg-gray-50">

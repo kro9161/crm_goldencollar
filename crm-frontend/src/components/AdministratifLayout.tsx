@@ -1,7 +1,7 @@
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 
 export default function AdministratifLayout() {
   const navigate = useNavigate();
@@ -89,7 +89,7 @@ export default function AdministratifLayout() {
     const loadYears = async () => {
       try {
         // Charger TOUTES les années (incluant archivées) pour le sélecteur
-        const res = await fetch("http://localhost:4000/academic-years?includeArchived=true", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/academic-years?includeArchived=true`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,

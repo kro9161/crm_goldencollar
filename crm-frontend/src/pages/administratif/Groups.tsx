@@ -67,7 +67,7 @@ export default function GroupsPage() {
   useEffect(() => {
     const loadYears = async () => {
       try {
-        const res = await fetch("http://localhost:4000/academic-years", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/academic-years`, {
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         });
         const data: Year[] = await res.json();
@@ -87,7 +87,7 @@ export default function GroupsPage() {
     const loadLevels = async () => {
       if (!token) return;
       try {
-        const res = await fetch("http://localhost:4000/levels", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/levels`, {
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("Failed to load levels");
@@ -107,7 +107,7 @@ export default function GroupsPage() {
     const yearForCreate = targetYearId || academicYearId;
     if (!newGroupName || !yearForCreate) return;
     try {
-      const res = await fetch("http://localhost:4000/groups", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/groups`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: newGroupName, label: newGroupLabel || null, academicYearId: yearForCreate }),
@@ -394,7 +394,9 @@ export default function GroupsPage() {
                         <div className="font-medium text-gray-900">{sg.code}</div>
                         <div className="flex items-center gap-2 mt-1.5">
                           {sg.label && <span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-50 px-2.5 py-0.5 text-xs font-medium">{sg.label}</span>}
-                          {sg.filiere && <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2.5 py-0.5 text-xs font-medium">{sg.filiere.code}</span>}
+                          {sg.subGroupFilieres && sg.subGroupFilieres.length > 0 && sg.subGroupFilieres.map((sf) => (
+                            <span key={sf.filiere.id} className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2.5 py-0.5 text-xs font-medium">{sf.filiere.code}</span>
+                          ))}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

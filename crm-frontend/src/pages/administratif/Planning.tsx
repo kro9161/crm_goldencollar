@@ -125,7 +125,7 @@ const [modalRooms, setModalRooms] = useState<ApiRoom[]>([]);
     const [cRes, tRes, rRes] = await Promise.all([
       fetch(`http://localhost:4000/courses${yearParam}`, { headers: { Authorization: `Bearer ${token}` } }),
       fetch(`http://localhost:4000/users?role=prof&academicYearId=${academicYearId}`, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch("http://localhost:4000/rooms", { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${import.meta.env.VITE_API_URL}/rooms`, { headers: { Authorization: `Bearer ${token}` } }),
     ]);
 
     const [coursesData, teachersData, roomsData]: [ApiCourse[], ApiProfessor[], ApiRoom[]] =
@@ -318,7 +318,7 @@ const [modalRooms, setModalRooms] = useState<ApiRoom[]>([]);
       return;
     }
 
-    const res = await fetch("http://localhost:4000/planning/bulk", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/planning/bulk`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({

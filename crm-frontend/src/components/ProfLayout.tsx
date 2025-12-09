@@ -1,7 +1,7 @@
 // src/components/ProfLayout.tsx
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 
 export default function ProfLayout() {
   const navigate = useNavigate();

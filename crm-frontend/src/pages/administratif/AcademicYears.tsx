@@ -109,7 +109,7 @@ export default function AcademicYears() {
     setSuccess("");
 
     try {
-      const res = await fetch("http://localhost:4000/academic-years", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/academic-years`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -214,7 +214,7 @@ export default function AcademicYears() {
   const handleRecompute = async () => {
     try {
       setError("");
-      const res = await fetch("http://localhost:4000/academic-years/recompute", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/academic-years/recompute`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });

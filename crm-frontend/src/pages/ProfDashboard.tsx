@@ -93,7 +93,7 @@ export default function ProfDashboard() {
 
   /* ------ Charger planning du prof ------ */
   useEffect(() => {
-    fetch("http://localhost:4000/prof/planning", {
+    fetch(`${import.meta.env.VITE_API_URL}/prof/planning`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -163,7 +163,7 @@ useEffect(() => {
     const promises = Object.entries(notes)
       .filter(([, val]) => typeof val === "number")
       .map(([studentId, valeur]) =>
-        fetch("http://localhost:4000/notes", {
+        fetch(`${import.meta.env.VITE_API_URL}/notes`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

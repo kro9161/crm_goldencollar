@@ -20,7 +20,7 @@ export default function Salles() {
   // 🧠 fetchRooms avec useCallback (corrige le warning ESLint)
   const fetchRooms = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:4000/rooms", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/rooms`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Erreur de chargement");
