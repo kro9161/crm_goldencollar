@@ -1,0 +1,8 @@
+ignoredBuiltDependencies:
+  - esbuild
+  - puppeteer
+
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - prisma

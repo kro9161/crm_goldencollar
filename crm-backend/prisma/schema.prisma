@@ -1,0 +1,651 @@
+// ---------------------------------------------------
+//  PRISMA SCHEMA — CRM École V1 COMPLET
+// ---------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------
+//  ANNÉES & PÉRIODES
+// ---------------------------------------------------
+
+model AcademicYear {
+  id        String   @id @default(cuid())
+  name      String   @unique      // "2025-2026 Octobre" ou "2025-2026 Février"
+  session   String                // "octobre" ou "fevrier"
+  startDate DateTime               // Oct 2025 ou Fév 2025
+  endDate   DateTime               // Oct 2026 ou Fév 2026
+  
+  isCurrent  Boolean @default(false)  // UNE SEULE année active à la fois
+  isArchived Boolean @default(false)  // Année terminée et archivée
+  
+  // Métadonnées d'archivage
+  archivedAt   DateTime?
+  archivedById String?
+
+  groups      Group[]
+  courses     Course[]
+  enrollments StudentEnrollment[]
+  periodes    Periode[]
+  payments    Payment[]
+  generatedDocuments GeneratedDocument[]
+  filieres   Filiere[]
+
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+}
+
+model Periode {
+  id        String   @id @default(cuid())
+  name      String           // "Semestre 1", "Trimestre 1", etc.
+  code      String?          // "S1", "T1", "T2" pour identifier
+  startDate DateTime
+  endDate   DateTime
+  
+  isCurrent Boolean @default(false)  // Période en cours
+
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  notes     Note[]
+
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+  
+  @@unique([academicYearId, code])
+}
+
+// ---------------------------------------------------
+//  UTILISATEURS
+// ---------------------------------------------------
+
+model User {
+  id        String @id @default(cuid())
+  email     String @unique
+  password  String
+  firstName String
+  lastName  String
+  role      String // "admin" | "administratif" | "prof" | "eleve"
+
+  // 🔥 Élève rattaché à plusieurs sous-groupes (via UserSubGroups)
+  subGroups SubGroup[] @relation("UserSubGroups")
+
+  // 🔥 Élève/Prof rattaché à des filières
+  filieres Filiere[] @relation("UserFilieres")
+
+  // 🔥 Professeurs / staff
+  courses          Course[]        @relation("CourseProfessors")
+  createdSessions  CourseSession[] @relation("CreatedSessions")
+  teachingSessions CourseSession[] @relation("TeachingSessions")
+
+  enrollments   StudentEnrollment[]
+  presences     Presence[]
+  notes         Note[]
+  notifications Notification[]
+
+  auditLogs            AuditLog[]           @relation("AuditUser")
+  messageCampaignsCreated MessageCampaign[]
+  campaignRecipients   CampaignRecipient[]
+  importJobsCreated    ImportJob[]
+  generatedDocuments   GeneratedDocument[]
+  
+  // Documents
+  templatesCreated     DocumentTemplate[]   @relation("TemplateCreator")
+  documentsGenerated   GeneratedDocument[]  @relation("DocumentGenerator")
+
+  refreshTokens RefreshToken[]   // 👈 AJOUT
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  revoked   Boolean  @default(false)
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+}
+
+
+// ---------------------------------------------------
+//  GROUPES & SOUS-GROUPES
+// ---------------------------------------------------
+
+model Group {
+  id    String  @id @default(cuid())
+  name  String
+  label String?
+
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  subGroups      SubGroup[]
+  targetSessions CourseSession[] @relation("TargetGroupSessions")
+
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+
+  @@unique([academicYearId, name, deletedAt])
+}
+
+model SubGroup {
+  id String @id @default(cuid())
+
+  code    String          // "B3-DEV-A"
+  label   String?
+
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id])
+
+  filiereId String?
+  filiere   Filiere?   @relation("SubGroupFiliere", fields: [filiereId], references: [id], onDelete: SetNull)
+
+  students User[]   @relation("UserSubGroups")
+  courses  Course[] @relation("CourseSubGroups")
+
+  targetSessions CourseSession[] @relation("TargetSubGroupSessions")
+
+  mainEnrollments StudentEnrollment[] @relation("MainSubGroupEnrollment")
+
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+
+  @@unique([groupId, code, deletedAt])
+  @@index([filiereId])
+}
+
+model Filiere {
+  id             String   @id @default(cuid())
+  code           String   // "INFO", "MARK", "RH"
+  label          String?  // "Informatique", "Marketing"
+
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  levelId String?
+  level   Level?   @relation("FiliereLevel", fields: [levelId], references: [id], onDelete: SetNull)
+
+  // Relations
+  users     User[]      @relation("UserFilieres")
+  courses   Course[]    @relation("FiliereCourses")
+  subGroups SubGroup[]  @relation("SubGroupFiliere")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@unique([code, academicYearId])
+  @@index([academicYearId])
+  @@index([levelId])
+}
+
+model Level {
+  id        String   @id @default(cuid())
+  code      String   @unique  // "BAC+1", "BAC+2", "BAC+3", "BAC+4", "BAC+5"
+  label     String?
+
+  filieres Filiere[] @relation("FiliereLevel")
+
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+}
+
+// ---------------------------------------------------
+//  COURS / MODULES
+// ---------------------------------------------------
+
+model Course {
+  id   String @id @default(cuid())
+  code String?      // optionnel : "JAV101"
+  name String
+
+  type   String? // cours, TD, TP
+  domain String? // Informatique, Marketing…
+
+  totalHours    Int?
+  totalSessions Int?
+
+  // coefficient pour bulletin
+  coef Float? @default(1)
+
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  // Filière du cours
+  filiereId String?
+  filiere   Filiere? @relation("FiliereCourses", fields: [filiereId], references: [id])
+
+  // Professeurs assignés
+  professors User[] @relation("CourseProfessors")
+
+  // Sous-groupes assignés
+  subGroups SubGroup[] @relation("CourseSubGroups")
+
+  sessions CourseSession[]
+  notes    Note[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  
+  @@index([filiereId])
+}
+
+// ---------------------------------------------------
+//  SESSIONS (PLANNING)
+// ---------------------------------------------------
+
+enum AttendanceStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  DONE
+}
+
+model CourseSession {
+  id String @id @default(cuid())
+
+  startTime DateTime
+  endTime   DateTime
+  date      DateTime?    // redondant mais pratique
+
+  attendanceStatus  AttendanceStatus @default(NOT_STARTED)
+  attendanceTakenAt DateTime?        // quand le prof a réellement fait l'appel
+
+  targetGroupId    String?
+  targetSubGroupId String?
+
+  targetGroup    Group?    @relation("TargetGroupSessions", fields: [targetGroupId], references: [id])
+  targetSubGroup SubGroup? @relation("TargetSubGroupSessions", fields: [targetSubGroupId], references: [id])
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  createdById String
+  createdBy   User   @relation("CreatedSessions", fields: [createdById], references: [id])
+
+  professorId String?
+  professor   User?  @relation("TeachingSessions", fields: [professorId], references: [id])
+
+  salleId String?
+  salle   Room?   @relation(fields: [salleId], references: [id])
+
+  presences     Presence[]
+  notes         Note[]
+  notifications Notification[] @relation("NotificationSession")
+
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+}
+
+// ---------------------------------------------------
+//  SALLES
+// ---------------------------------------------------
+
+model Room {
+  id       String @id @default(cuid())
+  name     String
+  capacity Int?
+
+  sessions CourseSession[]
+
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+
+  @@unique([name])
+}
+
+// ---------------------------------------------------
+//  INSCRIPTIONS & PAIEMENTS
+// ---------------------------------------------------
+
+model StudentEnrollment {
+  id             String @id @default(cuid())
+  studentId      String
+  student        User   @relation(fields: [studentId], references: [id])
+
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  mainSubGroupId String?       // sous-groupe "principal"
+  mainSubGroup   SubGroup? @relation("MainSubGroupEnrollment", fields: [mainSubGroupId], references: [id])
+
+  // 🔥 AJOUT: Rôle pour supporter profs et staff aussi
+  role               String   @default("eleve") // "eleve", "prof", "admin", "administratif"
+
+  status             String   @default("en_cours") // en_cours | termine | abandon | exclu
+  isFinanciallyClear Boolean @default(false)
+
+  totalFee   Float? // montant attendu
+  comment    String?
+
+  payments Payment[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
+  
+  @@unique([studentId, academicYearId, role])
+  @@index([academicYearId, role])
+}
+
+model Payment {
+  id            String @id @default(cuid())
+  enrollmentId  String
+  enrollment    StudentEnrollment @relation(fields: [enrollmentId], references: [id])
+
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  amount   Float
+  method   String?     // virement, CB…
+  status   String      // pending, paid, cancelled
+  dueDate  DateTime?
+  paidAt   DateTime?
+
+  reference String?
+
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+}
+
+// ---------------------------------------------------
+//  PRÉSENCES
+// ---------------------------------------------------
+
+model Presence {
+  id        String        @id @default(cuid())
+  sessionId String
+  session   CourseSession @relation(fields: [sessionId], references: [id])
+  studentId String
+  student   User          @relation(fields: [studentId], references: [id])
+
+  status           String // "present" | "absent" | "retard" | "justifie"
+  justified        Boolean @default(false)
+  reason           String?
+  validatedByAdmin Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+
+  @@unique([sessionId, studentId])
+}
+
+// ---------------------------------------------------
+//  NOTES / BULLETINS
+// ---------------------------------------------------
+
+model Note {
+  id        String @id @default(cuid())
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  sessionId String?
+  session   CourseSession? @relation(fields: [sessionId], references: [id])
+
+  valeur      Float
+  commentaire String?
+
+  noteType String?   // DS, Projet, Examen…
+  date     DateTime? // date réelle de l'évaluation
+
+  periodeId String?
+  periode   Periode? @relation(fields: [periodeId], references: [id])
+
+  isPublished Boolean @default(false) // visible pour l'élève ou pas
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+}
+
+// ---------------------------------------------------
+//  NOTIFICATIONS
+// ---------------------------------------------------
+
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  title   String
+  message String
+  type    String      // "absence", "retard", "appel_non_fait", "note", etc.
+  read    Boolean @default(false)
+
+  relatedSessionId String?
+  relatedSession   CourseSession? @relation("NotificationSession", fields: [relatedSessionId], references: [id])
+
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+}
+
+// ---------------------------------------------------
+//  DOCUMENTS (modèles + instances)
+// ---------------------------------------------------
+
+model DocumentTemplate {
+  id          String @id @default(cuid())
+  name        String        // "Carte étudiant", "Certificat de scolarité"
+  description String?       // description du template
+  category    String?       // "certificat", "carte", "attestation", "courrier", etc.
+  
+  // Type de template
+  templateType String @default("html")  // "html", "docx", "pdf"
+  
+  // Contenu du template
+  content      String  @db.Text  // HTML avec placeholders {{firstName}}, {{lastName}}, etc.
+  
+  // Fichier source (pour .docx ou .pdf uploadés)
+  sourceFilePath String?        // chemin vers le fichier original uploadé
+  sourceFileName String?        // nom du fichier original
+  sourceMimeType String?        // "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/pdf"
+  
+  // Variables disponibles dans le template
+  availableFields Json?         // ["firstName", "lastName", "email", "subGroup.name", "academicYear.name", etc.]
+  
+  // Configuration d'affichage
+  isActive    Boolean @default(true)
+  isPublic    Boolean @default(false)  // visible par tous les admins/staff
+  
+  // Gestion des permissions
+  createdById String?
+  createdBy   User? @relation("TemplateCreator", fields: [createdById], references: [id])
+  
+  allowedRoles String[] @default(["admin", "administratif"])  // qui peut utiliser ce template
+  
+  // Métadonnées
+  usageCount  Int @default(0)  // compteur d'utilisation
+  lastUsedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  generatedDocuments GeneratedDocument[]
+}
+
+model GeneratedDocument {
+  id         String @id @default(cuid())
+  templateId String
+  template   DocumentTemplate @relation(fields: [templateId], references: [id])
+
+  // Destinataire
+  studentId String?
+  student   User? @relation(fields: [studentId], references: [id])
+
+  academicYearId String?
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id])
+
+  // Fichier généré
+  filePath     String?   // chemin vers le fichier généré
+  fileName     String?   // nom du fichier généré
+  fileSize     Int?      // taille en bytes
+  mimeType     String?   // type du fichier généré
+  
+  // Données utilisées pour la génération
+  payload      Json?     // toutes les données injectées dans le template
+  
+  // Statut
+  status       String @default("generated")  // "generated", "sent", "downloaded", "archived"
+  downloadCount Int @default(0)
+  
+  // Qui a généré
+  generatedById String?
+  generatedBy   User? @relation("DocumentGenerator", fields: [generatedById], references: [id])
+
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+}
+
+// ---------------------------------------------------
+//  CHAMPS DYNAMIQUES (pour les templates)
+// ---------------------------------------------------
+
+model TemplateField {
+  id          String @id @default(cuid())
+  key         String @unique     // "student.firstName", "academicYear.name", "enrollment.totalFee"
+  label       String            // "Prénom de l'étudiant", "Année scolaire"
+  description String?           // Description détaillée du champ
+  category    String            // "student", "academicYear", "course", "enrollment", "custom"
+  dataType    String            // "string", "number", "date", "boolean", "array"
+  
+  example     String?           // Exemple de valeur: "Jean", "2024-2025"
+  isRequired  Boolean @default(false)
+  
+  // Pour les champs calculés ou formatés
+  format      String?           // "uppercase", "lowercase", "date:DD/MM/YYYY", "currency:EUR"
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+}
+
+// ---------------------------------------------------
+//  COMMUNICATIONS (campagnes)
+// ---------------------------------------------------
+
+model MessageCampaign {
+  id      String @id @default(cuid())
+  title   String
+  content String         // contenu mail / message
+  channel String         // "email", "sms", "internal"
+
+  createdById String?
+  createdBy   User? @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+
+  recipients CampaignRecipient[]
+}
+
+model CampaignRecipient {
+  id         String @id @default(cuid())
+  campaignId String
+  campaign   MessageCampaign @relation(fields: [campaignId], references: [id])
+
+  userId String?
+  user   User? @relation(fields: [userId], references: [id])
+
+  email  String?   // au cas où on envoie à une adresse brute
+  status String?   // sent, failed, opened, etc.
+}
+
+// ---------------------------------------------------
+//  IMPORT / EXPORT (traces d'import Excel / JSON)
+// ---------------------------------------------------
+
+model ImportJob {
+  id     String @id @default(cuid())
+  type   String      // "users", "courses", "planning", "presences"…
+  status String      // "pending", "running", "done", "error"
+
+  createdById String?
+  createdBy   User? @relation(fields: [createdById], references: [id])
+
+  totalRows    Int?
+  successCount Int?
+  errorCount   Int?
+
+  sourceFile String?   // chemin ou nom de fichier
+  rawPreview Json?     // éventuellement aperçu des 10 premières lignes
+
+  rowErrors ImportRowError[]
+
+  createdAt  DateTime @default(now())
+  finishedAt DateTime?
+}
+
+model ImportRowError {
+  id          String @id @default(cuid())
+  importJobId String
+  importJob   ImportJob @relation(fields: [importJobId], references: [id])
+
+  rowNumber Int
+  error     String
+  rawData   Json?
+}
+
+// ---------------------------------------------------
+//  AUDIT LOG
+// ---------------------------------------------------
+
+model AuditLog {
+  id     String @id @default(cuid())
+  userId String?
+  user   User? @relation("AuditUser", fields: [userId], references: [id])
+
+  action   String      // "CREATE_USER", "UPDATE_NOTE", "DELETE_SESSION"…
+  entity   String      // "User", "Course", "Presence", etc.
+  entityId String?
+  details  Json?
+
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------
+//  PERMISSIONS (comme avant)
+// ---------------------------------------------------
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  label       String
+  description String?
+  roleLinks   RolePermission[]
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  role         String
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  value        Boolean    @default(false)
+
+  @@unique([role, permissionId])
+}
+
+// ---------------------------------------------------
+//  ERD GENERATOR
+// ---------------------------------------------------
+
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "./diagram/erd.svg"
+}

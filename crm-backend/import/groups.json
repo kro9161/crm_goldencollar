@@ -1,0 +1,65 @@
+[
+  {
+    "name": "A",
+    "label": "Groupe A",
+    "subGroups": [
+      { "code": "AC", "label": "Marketing Digital et Communication (MDC)" },
+      { "code": "AR", "label": "Marketing et Communication (MC)" },
+      { "code": "MO", "label": "Marketing Opérationnelle et Communication (MOC)" },
+      { "code": "AM", "label": "Management d’Entreprise et Marketing (MEM)" },
+      { "code": "IMP", "label": "Ingénierie et Management des Affaires et de Projet (IMAP)" }
+    ]
+  },
+  {
+    "name": "B",
+    "label": "Groupe B",
+    "subGroups": [
+      { "code": "BG", "label": "Management et Gestion d’Entreprise (MGE)" },
+      { "code": "BS", "label": "Management et Stratégie d’Entreprise (MSE)" }
+    ]
+  },
+  {
+    "name": "C",
+    "label": "Groupe C",
+    "subGroups": [
+      { "code": "C-AL", "label": "Achat, logistique internationale et Contrôle de qualité (ALICQ)" },
+      { "code": "C-EC", "label": "Commerce international et E-commerce (CIEC)" },
+      { "code": "C-ML", "label": "Commerce et Marketing du Luxe (MML)" }
+    ]
+  },
+  {
+    "name": "D",
+    "label": "Groupe D",
+    "subGroups": [
+      { "code": "D-FCG", "label": "Finance et Contrôle de Gestion (FCG)" },
+      { "code": "D-CCA", "label": "Comptabilité, Contrôle et Audit (CCA)" },
+      { "code": "D-FBA", "label": "Finance, Banque et Assurance (FBA)" }
+    ]
+  },
+  {
+    "name": "L",
+    "label": "Groupe L",
+    "subGroups": [
+      { "code": "LEA", "label": "Tourisme (LEA Tourisme)" },
+      { "code": "LMTP", "label": "Management du tourisme et des Projets culturels (MTPC)" },
+      { "code": "LMTH", "label": "Management du tourisme et d’hôtellerie (MTH)" }
+    ]
+  },
+  {
+    "name": "INFO",
+    "label": "Groupe Info-Data",
+    "subGroups": [
+      { "code": "Info-Dev", "label": "Technologies Informatiques option WebDev" },
+      { "code": "Info-DABD", "label": "Data Analytics et Big Data (DABD)" },
+      { "code": "Info-CPDI", "label": "Chef de Projet en Développement Informatique (CPDI)" },
+      { "code": "Info-IAA", "label": "Intelligence Artificielle Appliquée (IAA)" }
+    ]
+  },
+  {
+    "name": "ARTS",
+    "label": "Groupe Arts",
+    "subGroups": [
+      { "code": "A&D", "label": "Arts et Design, options design d’espace, visuels, photographie" }
+    ]
+  }
+]

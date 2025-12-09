@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",               // ✅ mets bien ça, pas ES2020
+    "module": "NodeNext",             // ✅ pour activer import.meta
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "rootDir": "src",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": false,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}

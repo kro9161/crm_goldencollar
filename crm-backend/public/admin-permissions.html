@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin - Permissions</title>
+    <style>
+      body { font-family: ui-sans-serif, system-ui, -apple-system; margin: 24px; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #ddd; padding: 8px; }
+      th { background: #f3f4f6; }
+      .muted{ color:#6b7280;}
+    </style>
+  </head>
+  <body>
+    <h1>Gestion des permissions (démo minimale)</h1>
+    <p class="muted">Utilise l'API pour authentifier (JWT). Cette page teste le backend.</p>
+    <table id="tbl">
+      <thead><tr><th>Permission</th><th>Admin</th><th>Administratif</th><th>Prof</th><th>Élève</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <script>
+      async function load() {
+        const headers = {};
+        const token = localStorage.getItem('token');
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const res = await fetch('/admin/permissions/list', { headers });
+        const data = await res.json();
+        const tbody = document.querySelector('#tbl tbody');
+        tbody.innerHTML='';
+        const roles = ['admin','administratif','prof','eleve'];
+        const keys = data.length ? data.map(p=>p.key) : ['canManageUsers','canManageClasses','canManageAbsences','canExportData','canSendEmails'];
+        for (const key of keys) {
+          const tr = document.createElement('tr');
+          const tdLabel = document.createElement('td'); tdLabel.textContent = key; tr.appendChild(tdLabel);
+          for (const role of roles) {
+            const td = document.createElement('td');
+            const chk = document.createElement('input');
+            chk.type = 'checkbox';
+            chk.onchange = async () => {
+              await fetch('/admin/permissions/toggle', {
+                method:'POST',
+                headers: { 'Content-Type':'application/json', ...(token ? {'Authorization':'Bearer '+token} : {}) },
+                body: JSON.stringify({ role, key, value: chk.checked })
+              });
+            };
+            td.appendChild(chk); tr.appendChild(td);
+          }
+          tbody.appendChild(tr);
+        }
+      }
+      load();
+    </script>
+  </body>
+</html>
