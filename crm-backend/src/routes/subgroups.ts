@@ -1,3 +1,13 @@
+import { Router } from "express";
+import { PrismaClient, Prisma } from "@prisma/client";
+import { authRequired, requireRole } from "../middlewares/auth.js";
+
+const prisma = new PrismaClient();
+const router = Router();
+
+router.use(authRequired);
+router.use(requireRole("admin", "administratif"));
+
 /**
  * POST /subgroups/:id/filieres
  * Crée une filière et la lie directement à ce sous-groupe (champ filiereId)
@@ -42,15 +52,26 @@ router.post("/:id/filieres", async (req, res) => {
     res.status(500).json({ error: 'Erreur création filière liée au sous-groupe' });
   }
 });
-import { Router } from "express";
-import { PrismaClient, Prisma } from "@prisma/client";
-import { authRequired, requireRole } from "../middlewares/auth.js";
+/**
+ * 📌 GET /subgroups/:id
+ * Récupère un sous-groupe par son ID (hors deleted)
+ */
+router.get("/:id", async (req, res) => {
+  try {
+    const subGroup = await prisma.subGroup.findUnique({
+      where: { id: req.params.id },
+      include: { group: true, filiere: true, students: true, courses: true },
+    });
+    if (!subGroup || subGroup.deletedAt) {
+      return res.status(404).json({ error: "Sous-groupe non trouvé" });
+    }
+    res.json(subGroup);
+  } catch (err) {
+    console.error("Erreur GET /subgroups/:id :", err);
+    res.status(500).json({ error: "Erreur chargement sous-groupe" });
+  }
+});
 
-const prisma = new PrismaClient();
-const router = Router();
-
-router.use(authRequired);
-router.use(requireRole("admin", "administratif"));  // 🔥 Protection
 /**
  * 📌 GET /subgroups
  * Liste tous les sous-groupes
