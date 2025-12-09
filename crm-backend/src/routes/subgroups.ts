@@ -1,3 +1,47 @@
+/**
+ * POST /subgroups/:id/filieres
+ * Crée une filière et la lie directement à ce sous-groupe (champ filiereId)
+ */
+router.post("/:id/filieres", async (req, res) => {
+  try {
+    const { code, label, academicYearId, levelId } = req.body;
+    if (!code || !academicYearId) {
+      return res.status(400).json({ error: "code et academicYearId requis" });
+    }
+    // Vérifier unicité code+année
+    const existing = await prisma.filiere.findFirst({
+      where: { code: code.trim().toUpperCase(), academicYearId, deletedAt: null },
+    });
+    if (existing) {
+      return res.status(400).json({ error: "Cette filière existe déjà pour cette année" });
+    }
+    // Créer la filière
+    const filiere = await prisma.filiere.create({
+      data: {
+        code: code.trim().toUpperCase(),
+        label: label?.trim() || null,
+        academicYearId,
+        ...(levelId && { levelId }),
+      },
+    });
+    // Lier la filière au sous-groupe
+    const updated = await prisma.subGroup.update({
+      where: { id: req.params.id },
+      data: { filiereId: filiere.id },
+      include: { filiere: true },
+    });
+    res.status(201).json(updated);
+  } catch (e: any) {
+    if (e.code === 'P2025') {
+      return res.status(404).json({ error: 'Sous-groupe non trouvé' });
+    }
+    if (e.code === 'P2002') {
+      return res.status(400).json({ error: 'Cette filière existe déjà pour cette année' });
+    }
+    console.error(e);
+    res.status(500).json({ error: 'Erreur création filière liée au sous-groupe' });
+  }
+});
 import { Router } from "express";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { authRequired, requireRole } from "../middlewares/auth.js";

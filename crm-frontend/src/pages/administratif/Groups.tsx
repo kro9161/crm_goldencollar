@@ -183,28 +183,27 @@ export default function GroupsPage() {
   const createFiliere = async () => {
     if (!selectedSubGroupId || !newFiliereCode) return;
     try {
-      // 1. Créer la filière
-      const res = await fetch("http://localhost:4000/filieres", {
+      const res = await fetch(`http://localhost:4000/subgroups/${selectedSubGroupId}/filieres`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ 
-          code: newFiliereCode, 
-          label: newFiliereLabel || null, 
+        body: JSON.stringify({
+          code: newFiliereCode,
+          label: newFiliereLabel || null,
           levelId: newFiliereLevel || null,
-          academicYearId 
+          academicYearId
         }),
       });
-      if (!res.ok) throw new Error("failed");
-      const newFiliere = await res.json();
-      
-      // 2. Assigner la filière au sous-groupe
-      const updateRes = await fetch(`http://localhost:4000/subgroups/${selectedSubGroupId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ filiereId: newFiliere.id }),
-      });
-      if (!updateRes.ok) throw new Error("failed");
-      
+      if (!res.ok) {
+        const err = await res.json();
+        if (err?.error && err.error.includes("existe déjà")) {
+          setError("Ce code de filière existe déjà pour cette année.");
+        } else if (err?.error) {
+          setError("Erreur création filière : " + err.error);
+        } else {
+          setError("Erreur création filière");
+        }
+        return;
+      }
       setNewFiliereCode("");
       setNewFiliereLabel("");
       setNewFiliereLevel("");
