@@ -47,7 +47,7 @@ router.post('/json', async (req, res) => {
         // Groupe (unique par année scolaire)
         const group = await prisma.group.upsert({
           where: {
-            academicYearId_name: { academicYearId: year.id, name: g.name }
+            academicYearId_name_deletedAt: { academicYearId: year.id, name: g.name, deletedAt: null }
           },
           update: { label: g.label || null },
           create: {
@@ -64,18 +64,20 @@ router.post('/json', async (req, res) => {
           for (const sg of g.subGroups) {
 
             const subGroup = await prisma.subGroup.upsert({
-              where: { code: sg.code }, // pas unique → ok
+              where: {
+                groupId_code_deletedAt: {
+                  groupId: group.id,
+                  code: sg.code,
+                  deletedAt: null
+                }
+              },
               update: {
                 label: sg.label || null,
-                level: sg.level || null,
-                session: sg.session || null,
                 groupId: group.id,
               },
               create: {
                 code: sg.code,
                 label: sg.label || null,
-                level: sg.level || null,
-                session: sg.session || null,
                 groupId: group.id,
               }
             });

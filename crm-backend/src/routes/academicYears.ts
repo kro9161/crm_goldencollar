@@ -392,7 +392,7 @@ router.post("/:id/clone-groups", async (req, res) => {
       }
     }
 
-    res.json({ clonedFrom: from, target: id, coursesCreated });
+    res.json({ clonedFrom: from, target: id, groupsCreated });
   } catch (err) {
     console.error("❌ Erreur POST /academic-years/:id/clone-groups:", err);
     res.status(500).json({ error: "Erreur clonage groupes" });
@@ -440,7 +440,7 @@ router.post("/:id/clone-courses", async (req, res) => {
       coursesCreated += 1;
     }
 
-    res.json({ clonedFrom: from, target: id, groupsCreated });
+    res.json({ clonedFrom: from, target: id, coursesCreated });
   } catch (err) {
     console.error("❌ Erreur POST /academic-years/:id/clone-groups:", err);
     res.status(500).json({ error: "Erreur clonage groupes" });

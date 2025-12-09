@@ -36,7 +36,7 @@ router.post("/", requireRole("admin", "administratif", "prof"), async (req: Auth
 });
 
 // 🔍 Récupérer les notes d’un élève
-router.get("/eleve/:id", async (req, res) => {
+router.get("/eleve/:id", async (req: AuthedRequest, res) => {
   try {
 
     const askedId = req.params.id;
