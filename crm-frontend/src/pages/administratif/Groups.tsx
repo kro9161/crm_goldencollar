@@ -1,8 +1,12 @@
+
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useArchivedYear } from "../../hooks/useArchivedYear";
-}
+type Group = { id: string; name: string; label?: string | null; academicYear?: { id: string; name: string; session: string } };
+type SubGroup = { id: string; code: string; label?: string | null; subGroupFilieres?: { filiere: Filiere }[] };
+
 type Filiere = { id: string; code: string; label?: string | null; levelId?: string; level?: Level };
 type Level = { id: string; code: string; label?: string | null };
+type SubGroupFiliere = { filiere: Filiere };
 
 export default function GroupsPage() {
   const { isReadOnly, academicYearId, hasActiveYear } = useArchivedYear();
@@ -180,7 +184,7 @@ export default function GroupsPage() {
       if (!res.ok) throw new Error("Erreur chargement sous-groupe");
       const sg = await res.json();
       // On attend que le backend renvoie subGroupFilieres: [{ filiere }]
-      setFilieres(sg.subGroupFilieres ? sg.subGroupFilieres.map((sf: any) => sf.filiere) : []);
+      setFilieres(sg.subGroupFilieres ? sg.subGroupFilieres.map((sf: SubGroupFiliere) => sf.filiere) : []);
     } catch {
       setError("Erreur chargement filières");
     }
@@ -282,6 +286,7 @@ export default function GroupsPage() {
     }
   };
 
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Affichage des erreurs toujours en haut, pleine largeur, très visible */}
@@ -315,176 +320,174 @@ export default function GroupsPage() {
         {loading && <div className="text-gray-600">Chargement…</div>}
 
         {hasActiveYear && (
-          <div className="rounded-lg border border-gray-200 p-6 space-y-4 bg-white shadow-sm">
-            <h3 className="font-semibold text-lg">Créer un groupe</h3>
-            {/* ...existing code... */}
-          </div>
-        )}
-        {/* ...existing code... */}
-      </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Nom</label>
-            <input 
-              className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" 
-              value={newGroupName} 
-              onChange={(e) => setNewGroupName(e.target.value)} 
-              placeholder="Ex: Master IA"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Label (optionnel)</label>
-            <input 
-              className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" 
-              value={newGroupLabel} 
-              onChange={(e) => setNewGroupLabel(e.target.value)} 
-              placeholder="Ex: Intelligence Artificielle"
-            />
-          </div>
-          <YearSelector />
-          <div className="flex md:justify-end">
-            <button 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md w-full md:w-auto font-medium transition disabled:opacity-50 disabled:cursor-not-allowed" 
-              onClick={createGroup} 
-              disabled={(!targetYearId && !academicYearId) || !newGroupName}
-            >
-              Créer
-            </button>
-          </div>
-        </div>
-        {(!targetYearId && !academicYearId) && <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded p-2">⚠️ Sélectionne d'abord une année dans le menu en haut ou via la combo "Créer dans".</p>}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="rounded-lg border border-gray-200 p-6 bg-white shadow-sm">
-          <h3 className="font-semibold text-lg mb-4">Liste des groupes <span className="text-gray-500">({groups.length})</span></h3>
-          <ul className="space-y-2">
-            {groups.map((g) => (
-              <li key={g.id} className={`flex items-center justify-between border rounded-md px-4 py-3 transition ${selectedGroupId === g.id ? "bg-blue-50 border-blue-300" : "hover:bg-gray-50 border-gray-200"}`}>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900">{g.name}</span>
-                    {g.academicYear && (
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        (g.academicYear.session || "").toLowerCase() === "octobre"
-                          ? "bg-orange-100 text-orange-700 border border-orange-300" 
-                          : "bg-blue-100 text-blue-700 border border-blue-300"
-                      }`}>
-                        {formatSession(g.academicYear.session)}
-                      </span>
-                    )}
-                  </div>
-                  {g.label && <div className="text-sm text-gray-600 mt-1"><span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-50 px-2.5 py-0.5 text-xs font-medium">{g.label}</span></div>}
+          <>
+            <div className="rounded-lg border border-gray-200 p-6 space-y-4 bg-white shadow-sm">
+              <h3 className="font-semibold text-lg">Créer un groupe</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Nom</label>
+                  <input 
+                    className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" 
+                    value={newGroupName} 
+                    onChange={(e) => setNewGroupName(e.target.value)} 
+                    placeholder="Ex: Master IA"
+                  />
                 </div>
-                <div className="flex items-center gap-2">
-                  <button className="text-blue-600 hover:text-blue-800 font-medium text-sm px-2 py-1 rounded hover:bg-blue-50 transition" onClick={() => { setSelectedGroupId(g.id); setSelectedSubGroupId(null); setFilieres([]); }}>Sous-groupes</button>
-                  {!isReadOnly && (
-                    <button className="text-red-600 hover:text-red-800 font-medium text-sm px-2 py-1 rounded hover:bg-red-50 transition" onClick={() => deleteGroup(g.id)}>Supprimer</button>
-                  )}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Label (optionnel)</label>
+                  <input 
+                    className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" 
+                    value={newGroupLabel} 
+                    onChange={(e) => setNewGroupLabel(e.target.value)} 
+                    placeholder="Ex: Intelligence Artificielle"
+                  />
                 </div>
-              </li>
-            ))}
-            {groups.length === 0 && <li className="text-sm text-gray-500 italic py-4 text-center">Aucun groupe.</li>}
-          </ul>
-        </div>
-
-        <div className="rounded-lg border border-gray-200 p-6 bg-white shadow-sm">
-          <h3 className="font-semibold text-lg mb-4">Sous-groupes</h3>
-          {selectedGroupId ? (
-            <>
-              {!isReadOnly && (
-                <div className="mb-4 pb-4 border-b border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Code</label>
-                    <input className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm" value={newSubCode} onChange={(e) => setNewSubCode(e.target.value)} placeholder="B3-DEV-A" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Label</label>
-                    <input className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm" value={newSubLabel} onChange={(e) => setNewSubLabel(e.target.value)} placeholder="Développement" />
-                  </div>
-                  <div className="flex md:justify-end">
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md w-full md:w-auto font-medium transition text-sm disabled:opacity-50" onClick={createSubGroup} disabled={!newSubCode}>Créer</button>
-                  </div>
+                <YearSelector />
+                <div className="flex md:justify-end">
+                  <button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md w-full md:w-auto font-medium transition disabled:opacity-50 disabled:cursor-not-allowed" 
+                    onClick={createGroup} 
+                    disabled={(!targetYearId && !academicYearId) || !newGroupName}
+                  >
+                    Créer
+                  </button>
                 </div>
               </div>
-              )}
-              <div className="space-y-2">
-                {subGroups.map((sg) => (
-                  <div key={sg.id} className="border border-gray-200 rounded-md px-4 py-3 hover:bg-gray-50 transition">
-                    <div className="flex items-center justify-between">
+              {(!targetYearId && !academicYearId) && <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded p-2">⚠️ Sélectionne d'abord une année dans le menu en haut ou via la combo "Créer dans".</p>}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="rounded-lg border border-gray-200 p-6 bg-white shadow-sm">
+                <h3 className="font-semibold text-lg mb-4">Liste des groupes <span className="text-gray-500">({groups.length})</span></h3>
+                <ul className="space-y-2">
+                  {groups.map((g: Group) => (
+                    <li key={g.id} className={`flex items-center justify-between border rounded-md px-4 py-3 transition ${selectedGroupId === g.id ? "bg-blue-50 border-blue-300" : "hover:bg-gray-50 border-gray-200"}`}>
                       <div>
-                        <div className="font-medium text-gray-900">{sg.code}</div>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          {sg.label && <span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-50 px-2.5 py-0.5 text-xs font-medium">{sg.label}</span>}
-                          {sg.subGroupFilieres && sg.subGroupFilieres.length > 0 && sg.subGroupFilieres.map((sf) => (
-                            <span key={sf.filiere.id} className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2.5 py-0.5 text-xs font-medium">{sf.filiere.code}</span>
-                          ))}
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-900">{g.name}</span>
+                          {g.academicYear && (
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                              (g.academicYear.session || "").toLowerCase() === "octobre"
+                                ? "bg-orange-100 text-orange-700 border border-orange-300" 
+                                : "bg-blue-100 text-blue-700 border border-blue-300"
+                            }`}>
+                              {formatSession(g.academicYear.session)}
+                            </span>
+                          )}
                         </div>
+                        {g.label && <div className="text-sm text-gray-600 mt-1"><span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-50 px-2.5 py-0.5 text-xs font-medium">{g.label}</span></div>}
                       </div>
                       <div className="flex items-center gap-2">
-                        <button className="text-blue-600 hover:text-blue-800 font-medium text-sm px-2 py-1 rounded hover:bg-blue-50 transition" onClick={() => { setSelectedSubGroupId(sg.id); loadFilieres(); }}>Filières</button>
+                        <button className="text-blue-600 hover:text-blue-800 font-medium text-sm px-2 py-1 rounded hover:bg-blue-50 transition" onClick={() => { setSelectedGroupId(g.id); setSelectedSubGroupId(null); setFilieres([]); }}>Sous-groupes</button>
                         {!isReadOnly && (
-                          <button className="text-red-600 hover:text-red-800 font-medium text-sm px-2 py-1 rounded hover:bg-red-50 transition" onClick={() => deleteSubGroup(sg.id)}>Supprimer</button>
+                          <button className="text-red-600 hover:text-red-800 font-medium text-sm px-2 py-1 rounded hover:bg-red-50 transition" onClick={() => deleteGroup(g.id)}>Supprimer</button>
                         )}
                       </div>
-                    </div>
-                    {selectedSubGroupId === sg.id && (
-                      <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
-                        <h4 className="text-sm font-semibold text-gray-700">Gérer les filières</h4>
-                        {!isReadOnly && (
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                    </li>
+                  ))}
+                  {groups.length === 0 && <li className="text-sm text-gray-500 italic py-4 text-center">Aucun groupe.</li>}
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 p-6 bg-white shadow-sm">
+                <h3 className="font-semibold text-lg mb-4">Sous-groupes</h3>
+                {selectedGroupId ? (
+                  <>
+                    {!isReadOnly && (
+                      <div className="mb-4 pb-4 border-b border-gray-200">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                           <div className="space-y-1">
-                            <label className="text-xs font-medium text-gray-600">Code filière</label>
-                            <input className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm" value={newFiliereCode} onChange={(e) => setNewFiliereCode(e.target.value)} placeholder="INFO" />
+                            <label className="text-sm font-medium text-gray-700">Code</label>
+                            <input className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm" value={newSubCode} onChange={(e) => setNewSubCode(e.target.value)} placeholder="B3-DEV-A" />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-xs font-medium text-gray-600">Label (optionnel)</label>
-                            <input className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm" value={newFiliereLabel} onChange={(e) => setNewFiliereLabel(e.target.value)} placeholder="Informatique" />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-xs font-medium text-gray-600">Niveau</label>
-                            <select className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm" value={newFiliereLevel} onChange={(e) => setNewFiliereLevel(e.target.value)}>
-                              <option value="">— Aucun —</option>
-                              {levels.map((l) => (
-                                <option key={l.id} value={l.id}>{l.code} {l.label ? `(${l.label})` : ""}</option>
-                              ))}
-                            </select>
+                            <label className="text-sm font-medium text-gray-700">Label</label>
+                            <input className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm" value={newSubLabel} onChange={(e) => setNewSubLabel(e.target.value)} placeholder="Développement" />
                           </div>
                           <div className="flex md:justify-end">
-                            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md w-full md:w-auto font-medium transition text-sm disabled:opacity-50" onClick={createFiliere} disabled={!newFiliereCode}>Ajouter</button>
+                            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md w-full md:w-auto font-medium transition text-sm disabled:opacity-50" onClick={createSubGroup} disabled={!newSubCode}>Créer</button>
                           </div>
                         </div>
-                        )}
-                        <ul className="space-y-2">
-                          {filieres.map((f) => (
-                            <li key={f.id} className="flex items-center justify-between border border-gray-200 rounded-md px-3 py-2 bg-white hover:bg-gray-50 transition">
-                              <div>
-                                <div className="font-medium text-sm text-gray-900">{f.code}</div>
-                                <div className="flex items-center gap-2 mt-1">
-                                  {f.label && <span className="text-xs text-gray-600">{f.label}</span>}
-                                  {f.level && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{f.level.code}</span>}
-                                </div>
-                              </div>
-                              {!isReadOnly && (
-                                <button className="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded hover:bg-red-50 transition" onClick={() => deleteFiliere(f.id)}>Supprimer</button>
-                              )}
-                            </li>
-                          ))}
-                          {filieres.length === 0 && <li className="text-xs text-gray-500 italic py-2 text-center">Aucune filière pour ce sous-groupe.</li>}
-                        </ul>
                       </div>
                     )}
-                  </div>
-                ))}
-                {subGroups.length === 0 && <p className="text-sm text-gray-500 italic py-4 text-center">Aucun sous-groupe pour ce groupe.</p>}
+                    <div className="space-y-2">
+                      {subGroups.map((sg: SubGroup) => (
+                        <div key={sg.id} className="border border-gray-200 rounded-md px-4 py-3 hover:bg-gray-50 transition">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium text-gray-900">{sg.code}</div>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                {sg.label && <span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-50 px-2.5 py-0.5 text-xs font-medium">{sg.label}</span>}
+                                {sg.subGroupFilieres && sg.subGroupFilieres.length > 0 && sg.subGroupFilieres.map((sf: SubGroupFiliere) => (
+                                  <span key={sf.filiere.id} className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2.5 py-0.5 text-xs font-medium">{sf.filiere.code}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button className="text-blue-600 hover:text-blue-800 font-medium text-sm px-2 py-1 rounded hover:bg-blue-50 transition" onClick={() => { setSelectedSubGroupId(sg.id); loadFilieres(); }}>Filières</button>
+                              {!isReadOnly && (
+                                <button className="text-red-600 hover:text-red-800 font-medium text-sm px-2 py-1 rounded hover:bg-red-50 transition" onClick={() => deleteSubGroup(sg.id)}>Supprimer</button>
+                              )}
+                            </div>
+                          </div>
+                          {selectedSubGroupId === sg.id && (
+                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                              <h4 className="text-sm font-semibold text-gray-700">Gérer les filières</h4>
+                              {!isReadOnly && (
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium text-gray-600">Code filière</label>
+                                    <input className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm" value={newFiliereCode} onChange={(e) => setNewFiliereCode(e.target.value)} placeholder="INFO" />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium text-gray-600">Label (optionnel)</label>
+                                    <input className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm" value={newFiliereLabel} onChange={(e) => setNewFiliereLabel(e.target.value)} placeholder="Informatique" />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium text-gray-600">Niveau</label>
+                                    <select className="border border-gray-300 px-3 py-2 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm" value={newFiliereLevel} onChange={(e) => setNewFiliereLevel(e.target.value)}>
+                                      <option value="">— Aucun —</option>
+                                      {levels.map((l: Level) => (
+                                        <option key={l.id} value={l.id}>{l.code} {l.label ? `(${l.label})` : ""}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="flex md:justify-end">
+                                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md w-full md:w-auto font-medium transition text-sm disabled:opacity-50" onClick={createFiliere} disabled={!newFiliereCode}>Ajouter</button>
+                                  </div>
+                                </div>
+                              )}
+                              <ul className="space-y-2">
+                                {filieres.map((f: Filiere) => (
+                                  <li key={f.id} className="flex items-center justify-between border border-gray-200 rounded-md px-3 py-2 bg-white hover:bg-gray-50 transition">
+                                    <div>
+                                      <div className="font-medium text-sm text-gray-900">{f.code}</div>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        {f.label && <span className="text-xs text-gray-600">{f.label}</span>}
+                                        {f.level && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{f.level.code}</span>}
+                                      </div>
+                                    </div>
+                                    {!isReadOnly && (
+                                      <button className="text-red-600 hover:text-red-800 font-medium text-xs px-2 py-1 rounded hover:bg-red-50 transition" onClick={() => deleteFiliere(f.id)}>Supprimer</button>
+                                    )}
+                                  </li>
+                                ))}
+                                {filieres.length === 0 && <li className="text-xs text-gray-500 italic py-2 text-center">Aucune filière pour ce sous-groupe.</li>}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {subGroups.length === 0 && <p className="text-sm text-gray-500 italic py-4 text-center">Aucun sous-groupe pour ce groupe.</p>}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-500 italic py-4 text-center">Sélectionne un groupe pour voir/ajouter des sous-groupes.</p>
+                )}
               </div>
-            </>
-          ) : (
-            <p className="text-sm text-gray-500 italic py-4 text-center">Sélectionne un groupe pour voir/ajouter des sous-groupes.</p>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
