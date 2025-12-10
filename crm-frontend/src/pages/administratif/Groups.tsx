@@ -132,6 +132,7 @@ export default function GroupsPage() {
     }
   };
 
+
   // UI pour choisir l'année cible de création
   const YearSelector = () => (
     <div className="flex items-center gap-2">
@@ -150,7 +151,9 @@ export default function GroupsPage() {
       </select>
     </div>
   );
-}
+
+  const loadSubGroups = useCallback(async (groupId: string) => {
+    try {
       const res = await fetch(`http://localhost:4000/subgroups/by-group/${groupId}?academicYearId=${academicYearId}`, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
