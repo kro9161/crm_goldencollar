@@ -74,7 +74,25 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ padding: "2rem" }}>
+
       <h2>👑 Tableau de bord administrateur</h2>
+
+      {/* Accès gestion des années académiques */}
+      <a
+        href="/administratif/annees"
+        style={{
+          display: "inline-block",
+          backgroundColor: "#004aad",
+          color: "white",
+          borderRadius: "4px",
+          padding: "8px 16px",
+          marginBottom: "1rem",
+          textDecoration: "none",
+          fontWeight: "bold"
+        }}
+      >
+        📅 Gérer les années académiques
+      </a>
 
       {/* Bouton ajouter */}
       <button
