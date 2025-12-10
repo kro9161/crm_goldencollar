@@ -63,7 +63,7 @@ export default function EleveDashboard() {
 
     // 1) Planning via la nouvelle route /eleves/planning/:id
     const yearParam = academicYearId ? `?academicYearId=${academicYearId}` : "";
-    fetch(`http://localhost:4000/eleves/planning/${userId}${yearParam}`, {
+    fetch(`${import.meta.env.VITE_API_URL}/eleves/planning/${userId}${yearParam}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -86,7 +86,7 @@ export default function EleveDashboard() {
       });
 
     // 2) Notes réelles
-    fetch(`http://localhost:4000/notes/eleve/${userId}${yearParam}`, {
+    fetch(`${import.meta.env.VITE_API_URL}/notes/eleve/${userId}${yearParam}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -102,7 +102,7 @@ export default function EleveDashboard() {
       .catch(console.error);
 
     // 3) Absences réelles
-    fetch(`http://localhost:4000/eleve/absences/${userId}${yearParam}`, {
+    fetch(`${import.meta.env.VITE_API_URL}/eleve/absences/${userId}${yearParam}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())

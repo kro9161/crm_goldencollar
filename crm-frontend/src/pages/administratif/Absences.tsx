@@ -41,7 +41,7 @@ export default function Absences() {
 
     try {
       const yearParam = `?academicYearId=${academicYearId}`;
-      const res = await fetch(`http://localhost:4000/subgroups${yearParam}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/subgroups${yearParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Erreur de chargement");
@@ -56,7 +56,7 @@ export default function Absences() {
   const fetchSessions = useCallback(async () => {
     try {
       const yearParam = academicYearId ? `?academicYearId=${academicYearId}` : "";
-      const res = await fetch(`http://localhost:4000/absences/sessions${yearParam}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/absences/sessions${yearParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Erreur de chargement");
@@ -95,7 +95,7 @@ export default function Absences() {
   // Charger les détails d'une session
   const handleViewDetails = async (sessionId: string) => {
     try {
-      const res = await fetch(`http://localhost:4000/absences/session/${sessionId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/absences/session/${sessionId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Erreur de chargement");

@@ -58,7 +58,7 @@ export default function Courses() {
     }
 
     const yearParam = `?academicYearId=${academicYearId}`;
-    const res = await fetch(`http://localhost:4000/courses${yearParam}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/courses${yearParam}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     setCourses(await res.json());
@@ -66,7 +66,7 @@ export default function Courses() {
 
   const fetchProfs = useCallback(async () => {
     // Ne pas filtrer par année pour les profs (ils existent indépendamment des années)
-    const res = await fetch(`http://localhost:4000/users?role=prof`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/users?role=prof`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
@@ -81,7 +81,7 @@ export default function Courses() {
     }
 
     const yearParam = `?academicYearId=${academicYearId}`;
-    const res = await fetch(`http://localhost:4000/subgroups${yearParam}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/subgroups${yearParam}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     setSubGroups(await res.json());
@@ -89,7 +89,7 @@ export default function Courses() {
 
   const fetchFilieres = useCallback(async () => {
     const yearParam = academicYearId ? `?academicYearId=${academicYearId}` : "";
-    const res = await fetch(`http://localhost:4000/filieres${yearParam}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/filieres${yearParam}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     setFilieres(await res.json());
@@ -195,8 +195,8 @@ export default function Courses() {
     };
 
     const url = editingId
-      ? `http://localhost:4000/courses/${editingId}`
-      : "http://localhost:4000/courses";
+      ? `${import.meta.env.VITE_API_URL}/courses/${editingId}`
+      : `${import.meta.env.VITE_API_URL}/courses`;
 
     const method = editingId ? "PATCH" : "POST";
 
@@ -221,7 +221,7 @@ export default function Courses() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer ce module ?")) return;
-    await fetch(`http://localhost:4000/courses/${id}`, {
+    await fetch(`${import.meta.env.VITE_API_URL}/courses/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });

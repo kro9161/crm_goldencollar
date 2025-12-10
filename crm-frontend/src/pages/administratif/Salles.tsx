@@ -42,8 +42,8 @@ export default function Salles() {
 
     const method = editingId ? "PATCH" : "POST";
     const url = editingId
-      ? `http://localhost:4000/rooms/${editingId}`
-      : "http://localhost:4000/rooms";
+      ? `${import.meta.env.VITE_API_URL}/rooms/${editingId}`
+      : `${import.meta.env.VITE_API_URL}/rooms`;
 
     const body = {
       name: form.name.trim(),
@@ -75,7 +75,7 @@ export default function Salles() {
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer cette salle ?")) return;
     try {
-      await fetch(`http://localhost:4000/rooms/${id}`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/rooms/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

@@ -78,9 +78,9 @@ export default function AcademicYears() {
       setLoading(true);
       setError("");
       
-      const url = showArchived 
-        ? "http://localhost:4000/academic-years?includeArchived=true"
-        : "http://localhost:4000/academic-years";
+          const url = showArchived 
+            ? `${import.meta.env.VITE_API_URL}/academic-years?includeArchived=true`
+            : `${import.meta.env.VITE_API_URL}/academic-years`;
 
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -144,6 +144,7 @@ export default function AcademicYears() {
     try {
       setError("");
       const res = await fetch(`http://localhost:4000/academic-years/${id}/set-current`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/academic-years/${id}/set-current`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -179,8 +180,8 @@ export default function AcademicYears() {
     try {
       setError("");
       const url = force 
-        ? `http://localhost:4000/academic-years/${id}/archive?force=true`
-        : `http://localhost:4000/academic-years/${id}/archive`;
+          ? `${import.meta.env.VITE_API_URL}/academic-years/${id}/archive?force=true`
+          : `${import.meta.env.VITE_API_URL}/academic-years/${id}/archive`;
       const res = await fetch(url, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
@@ -235,6 +236,7 @@ export default function AcademicYears() {
     try {
       setLoadingDetails(true);
       const res = await fetch(`http://localhost:4000/academic-years/${yearId}/details`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/academic-years/${yearId}/details`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Erreur chargement détails");
@@ -263,6 +265,7 @@ export default function AcademicYears() {
     try {
       setError("");
       const res = await fetch(`http://localhost:4000/academic-years/${id}/unarchive`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/academic-years/${id}/unarchive`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -287,6 +290,7 @@ export default function AcademicYears() {
     try {
       setError("");
       const res = await fetch(`http://localhost:4000/academic-years/${id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/academic-years/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

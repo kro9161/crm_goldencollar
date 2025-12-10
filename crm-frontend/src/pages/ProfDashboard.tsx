@@ -143,7 +143,7 @@ useEffect(() => {
       status: presence[s.id] ?? "absent",
     }));
 
-    fetch(`http://localhost:4000/courses/${selectedSessionId}/attendance`, {
+    fetch(`${import.meta.env.VITE_API_URL}/courses/${selectedSessionId}/attendance`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(payload),

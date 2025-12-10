@@ -71,14 +71,14 @@ export default function Eleves() {
 
     try {
       const yearParam = `?academicYearId=${academicYearId}`;
-      const [eRes, sgRes, fRes] = await Promise.all([
-        fetch(`http://localhost:4000/eleves${yearParam}`, {
+          const [eRes, sgRes, fRes] = await Promise.all([
+            fetch(`${import.meta.env.VITE_API_URL}/eleves${yearParam}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`http://localhost:4000/subgroups${yearParam}`, {
+            fetch(`${import.meta.env.VITE_API_URL}/subgroups${yearParam}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`http://localhost:4000/filieres${yearParam}`, {
+            fetch(`${import.meta.env.VITE_API_URL}/filieres${yearParam}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -143,9 +143,9 @@ export default function Eleves() {
       return;
     }
 
-    const url = editingId
-      ? `http://localhost:4000/eleves/${editingId}`
-      : "http://localhost:4000/eleves";
+        const url = editingId
+          ? `${import.meta.env.VITE_API_URL}/eleves/${editingId}`
+          : `${import.meta.env.VITE_API_URL}/eleves`;
 
     const method: "POST" | "PATCH" = editingId ? "PATCH" : "POST";
 
@@ -200,7 +200,7 @@ export default function Eleves() {
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer cet élève ?")) return;
 
-    await fetch(`http://localhost:4000/eleves/${id}`, {
+        await fetch(`${import.meta.env.VITE_API_URL}/eleves/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });

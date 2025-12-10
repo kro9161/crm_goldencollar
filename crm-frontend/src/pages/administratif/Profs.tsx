@@ -37,7 +37,7 @@ export default function Profs() {
 
     try {
       const yearParam = `&academicYearId=${academicYearId}`;
-      const res = await fetch(`http://localhost:4000/users?role=prof${yearParam}`, {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/users?role=prof${yearParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -64,7 +64,7 @@ export default function Profs() {
     }
 
     const url = editingId
-      ? `http://localhost:4000/users/${editingId}`
+          ? `${import.meta.env.VITE_API_URL}/users/${editingId}`
       : "http://localhost:4000/users";
 
     const method = editingId ? "PATCH" : "POST";
@@ -131,7 +131,7 @@ export default function Profs() {
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer ce professeur ?")) return;
 
-    await fetch(`http://localhost:4000/users/${id}`, {
+        await fetch(`${import.meta.env.VITE_API_URL}/users/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
