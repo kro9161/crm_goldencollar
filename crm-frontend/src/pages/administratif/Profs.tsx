@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useArchivedYear } from "../../hooks/useArchivedYear";
 
 type Prof = {
@@ -29,7 +29,7 @@ export default function Profs() {
   const token = localStorage.getItem("token");
 
   // 📌 Récupérer la liste des profs
-  const fetchProfs = async () => {
+  const fetchProfs = useCallback(async () => {
     if (!academicYearId) {
       setProfs([]);
       return;
@@ -37,7 +37,7 @@ export default function Profs() {
 
     try {
       const yearParam = `&academicYearId=${academicYearId}`;
-          const res = await fetch(`${import.meta.env.VITE_API_URL}/users?role=prof${yearParam}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users?role=prof${yearParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -46,11 +46,11 @@ export default function Profs() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur inconnue");
     }
-  };
+  }, [academicYearId, token]);
 
   useEffect(() => {
     fetchProfs();
-  }, [academicYearId]);
+  }, [academicYearId, fetchProfs]);
 
   // 📌 Création / Edition
   const handleSubmit = async (e: React.FormEvent) => {

@@ -1,5 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useArchivedYear } from "../../hooks/useArchivedYear";
+ 
+ type AbsenceDetail = {
+   id: string;
+   studentName: string;
+   status: "present" | "absent" | "retard" | "justifie";
+   justified: boolean;
+   reason?: string;
+ };
 
 type SessionWithAttendance = {
   date: string;
@@ -28,7 +36,7 @@ export default function Absences() {
   const [subGroups, setSubGroups] = useState<SubGroup[]>([]);
   const [selectedSubGroup, setSelectedSubGroup] = useState<string>("all");
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
-  const [detailedAbsences, setDetailedAbsences] = useState<any[]>([]);
+  const [detailedAbsences, setDetailedAbsences] = useState<AbsenceDetail[]>([]);
   const [error, setError] = useState("");
   const token = localStorage.getItem("token");
 
