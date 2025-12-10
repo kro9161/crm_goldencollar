@@ -35,21 +35,32 @@ export default function GroupsPage() {
   };
 
   const token = useMemo(() => localStorage.getItem("token") || "", []);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   const loadGroups = useCallback(async () => {
-    if (!academicYearId) {
+    if (!token) {
+      setTokenError("Erreur d'authentification : veuillez vous reconnecter.");
       setGroups([]);
       return;
     }
-
+    if (!academicYearId) {
+      setError("Aucune année académique sélectionnée. Veuillez sélectionner une année.");
+      setGroups([]);
+      return;
+    }
     setLoading(true);
     setError(null);
+    setTokenError(null);
     try {
       const url = `http://localhost:4000/groups?academicYearId=${academicYearId}`;
-      
       const res = await fetch(url, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401) {
+        setTokenError("Erreur d'authentification : veuillez vous reconnecter.");
+        setGroups([]);
+        return;
+      }
       const data = (await res.json()) as Array<{ id: string; name: string; label?: string | null; academicYear?: { id: string; name: string; session: string } }>;
       setGroups(data.map((g) => ({ id: g.id, name: g.name, label: g.label, academicYear: g.academicYear })));
     } catch {
@@ -293,6 +304,7 @@ export default function GroupsPage() {
       )}
 
       {loading && <div className="text-gray-600">Chargement…</div>}
+      {tokenError && <div className="text-red-600 bg-red-50 border border-red-200 rounded p-3">{tokenError}</div>}
       {error && <div className="text-red-600 bg-red-50 border border-red-200 rounded p-3">{error}</div>}
 
       {hasActiveYear && (
