@@ -44,7 +44,7 @@ app.use(
       'http://localhost:3000',
       'http://localhost:5173',
       'http://localhost:8080',
-      'https://crm-frontend-iqp0.onrender.com', // Ajout: URL du frontend déployé
+      /\.onrender\.com$/, // Ajout: URL du frontend déployé
     ],
     credentials: true,
   })
