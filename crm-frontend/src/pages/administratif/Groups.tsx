@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useArchivedYear } from "../../hooks/useArchivedYear";
-
-type Group = { id: string; name: string; label?: string | null; academicYear?: { id: string; name: string; session: string } };
-type SubGroup = { id: string; code: string; label?: string | null; subGroupFilieres?: { filiere: Filiere }[] };
+}
 type Filiere = { id: string; code: string; label?: string | null; levelId?: string; level?: Level };
 type Level = { id: string; code: string; label?: string | null };
 
