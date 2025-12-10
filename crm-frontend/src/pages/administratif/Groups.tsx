@@ -285,31 +285,44 @@ export default function GroupsPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      <h2 className="text-2xl font-bold">Groupes</h2>
-
-      {!academicYearId && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-yellow-800 m-0">
-            ⚠️ Aucune année académique sélectionnée. Veuillez sélectionner une année en cours.
-          </p>
+      {/* Affichage des erreurs toujours en haut, pleine largeur, très visible */}
+      {(tokenError || error) && (
+        <div className="fixed top-0 left-0 w-full z-50">
+          <div className={`text-center py-3 px-4 font-semibold text-base ${tokenError ? 'bg-red-600 text-white' : 'bg-yellow-500 text-white'}`}>
+            {tokenError || error}
+          </div>
         </div>
       )}
 
-      {isReadOnly && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-blue-800 m-0">
-            📂 Mode consultation - Année archivée
-          </p>
-        </div>
-      )}
+      <div className="pt-16"> {/* Ajoute un padding-top pour ne pas masquer le contenu */}
+        <h2 className="text-2xl font-bold">Groupes</h2>
 
-      {loading && <div className="text-gray-600">Chargement…</div>}
-      {tokenError && <div className="text-red-600 bg-red-50 border border-red-200 rounded p-3">{tokenError}</div>}
-      {error && <div className="text-red-600 bg-red-50 border border-red-200 rounded p-3">{error}</div>}
+        {!academicYearId && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-yellow-800 m-0">
+              ⚠️ Aucune année académique sélectionnée. Veuillez sélectionner une année en cours.
+            </p>
+          </div>
+        )}
 
-      {hasActiveYear && (
-        <div className="rounded-lg border border-gray-200 p-6 space-y-4 bg-white shadow-sm">
-          <h3 className="font-semibold text-lg">Créer un groupe</h3>
+        {isReadOnly && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-blue-800 m-0">
+              📂 Mode consultation - Année archivée
+            </p>
+          </div>
+        )}
+
+        {loading && <div className="text-gray-600">Chargement…</div>}
+
+        {hasActiveYear && (
+          <div className="rounded-lg border border-gray-200 p-6 space-y-4 bg-white shadow-sm">
+            <h3 className="font-semibold text-lg">Créer un groupe</h3>
+            {/* ...existing code... */}
+          </div>
+        )}
+        {/* ...existing code... */}
+      </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Nom</label>

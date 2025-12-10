@@ -32,6 +32,8 @@ import levelsRouter from "./routes/levels.js";
 
 const prisma = new PrismaClient();
 const app = express();
+// Permet à Express de faire confiance au proxy (ex: Render, nginx) pour X-Forwarded-For
+app.set('trust proxy', 1); // 1 = premier proxy, true = tous
 
 // Sécurité + middlewares
 app.use(helmet());
