@@ -44,6 +44,7 @@ app.use(
       'http://localhost:3000',
       'http://localhost:5173',
       'http://localhost:8080',
+      'https://crm-frontend-iqp0.onrender.com', // Ajout: URL du frontend déployé
     ],
     credentials: true,
   })
@@ -123,7 +124,6 @@ app.use("/levels", levelsRouter);
 
 // Démarrage du serveur
 const port = process.env.PORT || 4000;
-
 
 app.listen(port, () =>
   console.log(`🚀 API running at http://localhost:${port}`)
