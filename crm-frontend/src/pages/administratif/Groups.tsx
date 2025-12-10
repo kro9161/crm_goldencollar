@@ -54,7 +54,7 @@ export default function GroupsPage() {
     setError(null);
     setTokenError(null);
     try {
-      const url = `http://localhost:4000/groups?academicYearId=${academicYearId}`;
+      const url = `${import.meta.env.VITE_API_URL}/groups?academicYearId=${academicYearId}`;
       const res = await fetch(url, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
@@ -156,7 +156,7 @@ export default function GroupsPage() {
 
   const loadSubGroups = useCallback(async (groupId: string) => {
     try {
-      const res = await fetch(`http://localhost:4000/subgroups/by-group/${groupId}?academicYearId=${academicYearId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/subgroups/by-group/${groupId}?academicYearId=${academicYearId}`, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
       const data = (await res.json()) as Array<{ id: string; code: string; label?: string | null; level?: string | null }>;
@@ -178,7 +178,7 @@ export default function GroupsPage() {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:4000/subgroups/${selectedSubGroupId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/subgroups/${selectedSubGroupId}`, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Erreur chargement sous-groupe");
@@ -197,7 +197,7 @@ export default function GroupsPage() {
   const createFiliere = async () => {
     if (!selectedSubGroupId || !newFiliereCode) return;
     try {
-      const res = await fetch(`http://localhost:4000/subgroups/${selectedSubGroupId}/filieres`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/subgroups/${selectedSubGroupId}/filieres`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -231,7 +231,7 @@ export default function GroupsPage() {
   const deleteFiliere = async (filiereId: string) => {
     if (!selectedSubGroupId) return;
     try {
-      const res = await fetch(`http://localhost:4000/subgroups/${selectedSubGroupId}/filieres/${filiereId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/subgroups/${selectedSubGroupId}/filieres/${filiereId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
@@ -245,7 +245,7 @@ export default function GroupsPage() {
   const createSubGroup = async () => {
     if (!selectedGroupId || !newSubCode) return;
     try {
-      const res = await fetch(`http://localhost:4000/subgroups?academicYearId=${academicYearId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/subgroups?academicYearId=${academicYearId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ code: newSubCode, label: newSubLabel || null, groupId: selectedGroupId }),
@@ -261,7 +261,7 @@ export default function GroupsPage() {
 
   const deleteGroup = async (groupId: string) => {
     try {
-      const res = await fetch(`http://localhost:4000/groups/${groupId}?academicYearId=${academicYearId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/groups/${groupId}?academicYearId=${academicYearId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
@@ -275,7 +275,7 @@ export default function GroupsPage() {
 
   const deleteSubGroup = async (subGroupId: string) => {
     try {
-      const res = await fetch(`http://localhost:4000/subgroups/${subGroupId}?academicYearId=${academicYearId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/subgroups/${subGroupId}?academicYearId=${academicYearId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
