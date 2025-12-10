@@ -70,6 +70,7 @@ export default function AdministratifLayout() {
       items: [
         { label: "Tableau de bord", to: "/administratif/dashboard" },
         { label: "Années académiques", to: "/administratif/annees" },
+        { label: "Créer une année académique", to: "/administratif/annees" },
       ],
     },
   ];
