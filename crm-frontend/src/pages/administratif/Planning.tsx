@@ -123,8 +123,8 @@ const [modalRooms, setModalRooms] = useState<ApiRoom[]>([]);
 
     const yearParam = `?academicYearId=${academicYearId}`;
     const [cRes, tRes, rRes] = await Promise.all([
-      fetch(`http://localhost:4000/courses${yearParam}`, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`http://localhost:4000/users?role=prof&academicYearId=${academicYearId}`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${import.meta.env.VITE_API_URL}/courses${yearParam}`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${import.meta.env.VITE_API_URL}/users?role=prof&academicYearId=${academicYearId}`, { headers: { Authorization: `Bearer ${token}` } }),
       fetch(`${import.meta.env.VITE_API_URL}/rooms`, { headers: { Authorization: `Bearer ${token}` } }),
     ]);
 
