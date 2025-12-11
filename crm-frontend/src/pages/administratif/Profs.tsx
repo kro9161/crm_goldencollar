@@ -64,8 +64,8 @@ export default function Profs() {
     }
 
     const url = editingId
-          ? `${import.meta.env.VITE_API_URL}/users/${editingId}`
-      : "http://localhost:4000/users";
+            ? `${import.meta.env.VITE_API_URL}/users/${editingId}`
+          : `${import.meta.env.VITE_API_URL}/users`;
 
     const method = editingId ? "PATCH" : "POST";
 
