@@ -262,17 +262,16 @@ export default function Eleves() {
       return;
     }
 
-    // 🎉 Succès ! 
+    // 🎉 Succès !
     if (!editingId && data.temporaryPassword) {
-      // Nouvelle création : affiche le mot de passe mais ne ferme PAS le formulaire tout de suite
+      // Nouvelle création : affiche le mot de passe, ferme le formulaire après 2s
       setTempPassword(data.temporaryPassword);
-      console.log("✅ Élève créé ! Mot de passe temporaire :", data.temporaryPassword);
-      
-      // Recharger la liste en background (ne remet pas en blanc)
       fetchData();
-      
-      // Garder le formulaire ouvert pour montrer le mot de passe
-      // L'utilisateur devra fermer manuellement après avoir copié le mot de passe
+      setTimeout(() => {
+        setShowForm(false);
+        setEditingId(null);
+        setTempPassword("");
+      }, 2000);
     } else {
       // Édition ou création sans mot de passe : ferme le formulaire
       setShowForm(false);
@@ -287,13 +286,22 @@ export default function Eleves() {
   // -----------------------------
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer cet élève ?")) return;
-
-        await fetch(`${import.meta.env.VITE_API_URL}/eleves/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    fetchData();
+    setError("");
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/eleves/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Erreur lors de la suppression");
+        return;
+      }
+      // Retirer l'élève de la liste immédiatement côté UI
+      setEleves(prev => prev.filter(e => e.id !== id));
+    } catch {
+      setError("Erreur lors de la suppression");
+    }
   };
 
   // -----------------------------
@@ -401,12 +409,14 @@ export default function Eleves() {
                   <div><span className="font-semibold">Statut :</span> {selectedEleve.status || "-"}</div>
                   <div><span className="font-semibold">Date inscription :</span> {selectedEleve.registrationDate || "-"}</div>
                   <div><span className="font-semibold">Numéro étudiant :</span> {selectedEleve.studentNumber || "-"}</div>
-                  <div className="sm:col-span-2"><span className="font-semibold">Filières :</span> {selectedEleve.filieres?.map((f: Filiere) => f.code).join(", ") || "-"}</div>
+                  <div className="sm:col-span-2"><span className="font-semibold">Filières :</span> {selectedEleve.filieres?.map((f: Filiere) => `${f.code} - ${f.label || ''}`).join(", ") || "-"}</div>
                   <div><span className="font-semibold">Sous-groupe :</span> {selectedEleve.subGroup?.code || "-"}</div>
                   <div><span className="font-semibold">Session :</span> {selectedEleve.subGroup?.session || "-"}</div>
                   <div><span className="font-semibold">Groupe :</span> {selectedEleve.subGroup?.group?.name || "-"}</div>
                   <div><span className="font-semibold">Boursier :</span> {selectedEleve.scholarship ? "Oui" : "Non"}</div>
                   <div><span className="font-semibold">Handicap :</span> {selectedEleve.handicap ? "Oui" : "Non"}</div>
+                  {/* Ajout d'un affichage debug pour tous les champs restants */}
+                  {/* <pre className="col-span-2 text-xs bg-gray-50 p-2 mt-2 rounded">{JSON.stringify(selectedEleve, null, 2)}</pre> */}
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
