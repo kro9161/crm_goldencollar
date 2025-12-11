@@ -206,6 +206,7 @@ router.get("/", async (req, res) => {
       } as any,
       include: {
         student: {
+          where: { deletedAt: null },
           include: {
             subGroups: {
               where: { deletedAt: null },
@@ -214,6 +215,7 @@ router.get("/", async (req, res) => {
                 subGroupFilieres: { include: { filiere: true } },
               },
             },
+            filieres: true,
           },
         },
       },
@@ -222,7 +224,28 @@ router.get("/", async (req, res) => {
 
     const eleves = enrollments
       .map(e => e.student)
-      .filter((u): u is NonNullable<typeof u> => !!u);
+      .filter((u): u is NonNullable<typeof u> => !!u)
+      .map(u => ({
+        id: u.id,
+        email: u.email,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        dateOfBirth: u.dateOfBirth,
+        phone: u.phone,
+        address: u.address,
+        gender: u.gender,
+        nationality: u.nationality,
+        status: u.status,
+        registrationDate: u.registrationDate,
+        studentNumber: u.studentNumber,
+        photoUrl: u.photoUrl,
+        scholarship: u.scholarship,
+        handicap: u.handicap,
+        subGroups: u.subGroups,
+        filieres: u.filieres,
+        // Pour compatibilité ancienne UI
+        subGroup: u.subGroups && u.subGroups.length > 0 ? u.subGroups[0] : null,
+      }));
 
     console.log(`📚 Retour de ${eleves.length} élèves pour l'année ${academicYearId}`);
     res.json(eleves);
@@ -238,7 +261,11 @@ router.get("/", async (req, res) => {
  */
 router.post("/", async (req, res) => {
   try {
-    const { email, firstName, lastName, subGroupId, academicYearId } = req.body;
+    const {
+      email, firstName, lastName, subGroupId, academicYearId, filiereIds,
+      photoUrl, dateOfBirth, phone, address, gender, nationality, status,
+      registrationDate, studentNumber, scholarship, handicap
+    } = req.body;
 
     if (!email || !firstName || !lastName) {
       return res.status(400).json({ error: "Champs obligatoires manquants" });
@@ -256,7 +283,6 @@ router.post("/", async (req, res) => {
         where: { isCurrent: true, isArchived: false, deletedAt: null },
         select: { id: true },
       });
-
       if (!currentYear) {
         return res.status(400).json({ error: "Aucune année académique courante" });
       }
@@ -268,14 +294,12 @@ router.post("/", async (req, res) => {
       where: { id: targetYearId },
       select: { id: true },
     });
-
     if (!yearExists) {
       console.error("❌ Année académique introuvable:", targetYearId);
       return res.status(400).json({ error: "Année académique invalide ou supprimée" });
     }
 
     console.log("✅ Création élève sur année:", targetYearId);
-
 
     const created = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -285,12 +309,27 @@ router.post("/", async (req, res) => {
           lastName,
           role: "eleve",
           password: bcrypt.hashSync(password, 10),
+          photoUrl,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+          phone,
+          address,
+          gender,
+          nationality,
+          status,
+          registrationDate: registrationDate ? new Date(registrationDate) : undefined,
+          studentNumber,
+          scholarship,
+          handicap,
           subGroups: subGroupId 
             ? { connect: { id: subGroupId } }
+            : undefined,
+          filieres: filiereIds && filiereIds.length > 0
+            ? { connect: filiereIds.map((id: string) => ({ id })) }
             : undefined,
         },
         include: {
           subGroups: { include: { group: true, subGroupFilieres: { include: { filiere: true } } } },
+          filieres: true,
         }
       });
 
@@ -324,8 +363,11 @@ router.post("/", async (req, res) => {
  */
 router.patch("/:id", async (req, res) => {
   try {
-    const { firstName, lastName, email, subGroupId } = req.body;
-
+    const {
+      firstName, lastName, email, subGroupId, filiereIds,
+      photoUrl, dateOfBirth, phone, address, gender, nationality, status,
+      registrationDate, studentNumber, scholarship, handicap
+    } = req.body;
 
     const updated = await prisma.user.update({
       where: { id: req.params.id },
@@ -333,19 +375,35 @@ router.patch("/:id", async (req, res) => {
         ...(firstName ? { firstName } : {}),
         ...(lastName ? { lastName } : {}),
         ...(email ? { email } : {}),
+        ...(photoUrl !== undefined ? { photoUrl } : {}),
+        ...(dateOfBirth !== undefined ? { dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null } : {}),
+        ...(phone !== undefined ? { phone } : {}),
+        ...(address !== undefined ? { address } : {}),
+        ...(gender !== undefined ? { gender } : {}),
+        ...(nationality !== undefined ? { nationality } : {}),
+        ...(status !== undefined ? { status } : {}),
+        ...(registrationDate !== undefined ? { registrationDate: registrationDate ? new Date(registrationDate) : null } : {}),
+        ...(studentNumber !== undefined ? { studentNumber } : {}),
+        ...(scholarship !== undefined ? { scholarship } : {}),
+        ...(handicap !== undefined ? { handicap } : {}),
         ...(subGroupId !== undefined
-          ? { 
-              subGroups: subGroupId 
-                ? { set: [], connect: { id: subGroupId } }
-                : { set: [] }
+          ? { subGroups: subGroupId 
+              ? { set: [], connect: { id: subGroupId } }
+              : { set: [] }
             }
-          : {}
-        )
+          : {}),
+        ...(filiereIds !== undefined
+          ? { filieres: filiereIds.length > 0
+              ? { set: filiereIds.map((id: string) => ({ id })) }
+              : { set: [] }
+            }
+          : {}),
       },
       include: {
         subGroups: {
           include: { group: true, subGroupFilieres: { include: { filiere: true } } },
         },
+        filieres: true,
       },
     });
 
@@ -362,11 +420,11 @@ router.patch("/:id", async (req, res) => {
  */
 router.delete("/:id", async (req, res) => {
   try {
-    await prisma.user.delete({
+    await prisma.user.update({
       where: { id: req.params.id },
+      data: { deletedAt: new Date() },
     });
-
-    res.json({ message: "Élève supprimé" });
+    res.json({ message: "Élève supprimé (soft delete)" });
   } catch (err) {
     console.error("❌ Erreur DELETE /eleves/:id :", err);
     res.status(500).json({ error: "Erreur suppression élève" });

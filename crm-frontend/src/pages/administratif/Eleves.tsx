@@ -1,5 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { useArchivedYear } from "../../hooks/useArchivedYear";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader as DialogH, DialogTitle as DialogT, DialogFooter as DialogF, DialogClose } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import PhotoUploader from "@/components/PhotoUploader";
 
 type Group = {
   id: string;
@@ -75,6 +81,7 @@ export default function Eleves() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [tempPassword, setTempPassword] = useState("");
+  const [selectedEleve, setSelectedEleve] = useState<Eleve | null>(null);
 
   const [form, setForm] = useState<EleveForm>({
     firstName: "",
@@ -223,6 +230,17 @@ export default function Eleves() {
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
       email: form.email.trim(),
+      dateOfBirth: form.dateOfBirth || null,
+      phone: form.phone || null,
+      address: form.address || null,
+      gender: form.gender || null,
+      nationality: form.nationality || null,
+      status: form.status || null,
+      registrationDate: form.registrationDate || null,
+      studentNumber: form.studentNumber || null,
+      photoUrl: form.photoUrl || null,
+      scholarship: form.scholarship,
+      handicap: form.handicap,
       subGroupId: form.subGroupId || null,
       filiereIds: form.filiereIds,
       academicYearId,
@@ -282,97 +300,68 @@ export default function Eleves() {
   // 🔹 Render
   // -----------------------------
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ fontSize: 24, marginBottom: 12 }}>🧑‍🎓 Gestion des élèves</h2>
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <h2 className="text-3xl font-bold tracking-tight">🧑‍🎓 Gestion des élèves</h2>
+        {hasActiveYear && (
+          <Button onClick={openCreate} className="h-10 px-6 text-base font-semibold">
+            ➕ Nouvel élève
+          </Button>
+        )}
+      </div>
 
       {!academicYearId && (
-        <div style={{ 
-          background: "#fff3cd", 
-          border: "1px solid #ffc107", 
-          padding: 16, 
-          borderRadius: 8, 
-          marginBottom: 20 
-        }}>
-          <p style={{ margin: 0, color: "#856404" }}>
-            ⚠️ Aucune année académique sélectionnée. Veuillez sélectionner une année en cours pour afficher les élèves.
-          </p>
+        <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-lg p-4 mb-4">
+          ⚠️ Aucune année académique sélectionnée. Veuillez sélectionner une année en cours pour afficher les élèves.
         </div>
       )}
-
       {isReadOnly && (
-        <div style={{ 
-          background: "#d1ecf1", 
-          border: "1px solid #bee5eb", 
-          padding: 16, 
-          borderRadius: 8, 
-          marginBottom: 20 
-        }}>
-          <p style={{ margin: 0, color: "#0c5460" }}>
-            📂 Mode consultation - Année archivée
-          </p>
+        <div className="bg-blue-100 border border-blue-200 text-blue-800 rounded-lg p-4 mb-4">
+          📂 Mode consultation - Année archivée
         </div>
       )}
+      {error && <div className="text-red-600 font-medium mb-4">{error}</div>}
 
-      {hasActiveYear && (
-        <button
-          onClick={openCreate}
-          style={{
-            background: "#0066ff",
-            color: "white",
-            padding: 8,
-            borderRadius: 4,
-            marginBottom: 20,
-          }}
-        >
-          ➕ Nouvel élève
-        </button>
-      )}
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      <div className="overflow-x-auto -mx-4 lg:mx-0">
-        <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden border-collapse">
-          <thead className="bg-gray-200 text-gray-800">
+      <div className="overflow-x-auto rounded-xl shadow border bg-white">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left">Nom</th>
-              <th className="px-4 py-3 text-left">Prénom</th>
-              <th className="px-4 py-3 text-left hidden lg:table-cell">Email</th>
-              <th className="px-4 py-3 text-left hidden md:table-cell">Filières</th>
-              <th className="px-4 py-3 text-left">Sous-groupe</th>
-              <th className="px-4 py-3 text-left hidden xl:table-cell">Session</th>
-              <th className="px-4 py-3 text-left hidden xl:table-cell">Groupe</th>
-              <th className="px-4 py-3 text-center">Actions</th>
+              <th className="px-4 py-3 text-left font-semibold">Nom</th>
+              <th className="px-4 py-3 text-left font-semibold">Prénom</th>
+              <th className="px-4 py-3 text-left font-semibold hidden lg:table-cell">Email</th>
+              <th className="px-4 py-3 text-left font-semibold hidden md:table-cell">Filières</th>
+              <th className="px-4 py-3 text-left font-semibold">Sous-groupe</th>
+              <th className="px-4 py-3 text-left font-semibold hidden xl:table-cell">Session</th>
+              <th className="px-4 py-3 text-left font-semibold hidden xl:table-cell">Groupe</th>
+              <th className="px-4 py-3 text-center font-semibold">Actions</th>
             </tr>
           </thead>
-
           <tbody>
             {eleves.map((e) => (
-              <tr key={e.id} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-3">{e.lastName}</td>
+              <tr key={e.id} className="border-b hover:bg-gray-50 transition">
+                <td className="px-4 py-3 font-medium">{e.lastName}</td>
                 <td className="px-4 py-3">{e.firstName}</td>
                 <td className="px-4 py-3 hidden lg:table-cell text-sm">{e.email}</td>
-                <td className="px-4 py-3 hidden md:table-cell">{e.filieres?.map(f => f.code).join(", ") || "-"}</td>
+                <td className="px-4 py-3 hidden md:table-cell">{e.filieres?.map((f: Filiere) => f.code).join(", ") || "-"}</td>
                 <td className="px-4 py-3">{e.subGroup?.code || "-"}</td>
                 <td className="px-4 py-3 hidden xl:table-cell">{e.subGroup?.session || "-"}</td>
                 <td className="px-4 py-3 hidden xl:table-cell">{e.subGroup?.group?.name || "-"}</td>
-
                 <td className="px-4 py-3">
-                  {!isReadOnly && (
-                    <div className="flex gap-2 justify-center">
-                      <button
-                        className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm transition"
-                        onClick={() => openEdit(e)}
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition"
-                        onClick={() => handleDelete(e.id)}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex gap-2 justify-center">
+                    <Button variant="secondary" size="sm" onClick={() => setSelectedEleve(e)}>
+                      👁️ Fiche
+                    </Button>
+                    {!isReadOnly && (
+                      <>
+                        <Button variant="outline" size="sm" onClick={() => openEdit(e)}>
+                          ✏️
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(e.id)}>
+                          🗑️
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -380,108 +369,174 @@ export default function Eleves() {
         </table>
       </div>
 
-      {/* FORM */}
-      {showForm && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <form
-            onSubmit={handleSubmit}
-            style={{
-              background: "white",
-              padding: 20,
-              borderRadius: 8,
-              width: 400,
-              display: "grid",
-              gap: 10,
-            }}
-          >
-            <h3>{editingId ? "Modifier l'élève" : "Créer un élève"}</h3>
+      {/* MODAL FICHE ELEVE MODERNE */}
+      <Dialog open={!!selectedEleve} onOpenChange={v => !v && setSelectedEleve(null)}>
+        <DialogContent className="max-w-lg w-full">
+          <DialogH>
+            <DialogT>Fiche élève</DialogT>
+            <p className="text-muted-foreground text-sm">Toutes les informations détaillées de l'élève</p>
+          </DialogH>
+          {selectedEleve && (
+            <Card className="shadow-none border-none p-0">
+              <CardHeader className="flex flex-col items-center gap-2 pb-2">
+                <div className="w-24 h-24 rounded-full bg-gray-100 overflow-hidden border-2 border-primary mb-2 flex items-center justify-center">
+                  {selectedEleve.photoUrl ? (
+                    <img src={selectedEleve.photoUrl} alt="Photo élève" className="object-cover w-full h-full" />
+                  ) : (
+                    <span className="text-5xl text-gray-400">👤</span>
+                  )}
+                </div>
+                <CardTitle className="text-2xl font-bold text-center">
+                  {selectedEleve.firstName} {selectedEleve.lastName}
+                </CardTitle>
+                <div className="text-sm text-muted-foreground">{selectedEleve.email}</div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                  <div><span className="font-semibold">Date de naissance :</span> {selectedEleve.dateOfBirth || "-"}</div>
+                  <div><span className="font-semibold">Téléphone :</span> {selectedEleve.phone || "-"}</div>
+                  <div><span className="font-semibold">Adresse :</span> {selectedEleve.address || "-"}</div>
+                  <div><span className="font-semibold">Sexe :</span> {selectedEleve.gender || "-"}</div>
+                  <div><span className="font-semibold">Nationalité :</span> {selectedEleve.nationality || "-"}</div>
+                  <div><span className="font-semibold">Statut :</span> {selectedEleve.status || "-"}</div>
+                  <div><span className="font-semibold">Date inscription :</span> {selectedEleve.registrationDate || "-"}</div>
+                  <div><span className="font-semibold">Numéro étudiant :</span> {selectedEleve.studentNumber || "-"}</div>
+                  <div className="sm:col-span-2"><span className="font-semibold">Filières :</span> {selectedEleve.filieres?.map((f: Filiere) => f.code).join(", ") || "-"}</div>
+                  <div><span className="font-semibold">Sous-groupe :</span> {selectedEleve.subGroup?.code || "-"}</div>
+                  <div><span className="font-semibold">Session :</span> {selectedEleve.subGroup?.session || "-"}</div>
+                  <div><span className="font-semibold">Groupe :</span> {selectedEleve.subGroup?.group?.name || "-"}</div>
+                  <div><span className="font-semibold">Boursier :</span> {selectedEleve.scholarship ? "Oui" : "Non"}</div>
+                  <div><span className="font-semibold">Handicap :</span> {selectedEleve.handicap ? "Oui" : "Non"}</div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-end">
+                <DialogClose asChild>
+                  <Button variant="outline">Fermer</Button>
+                </DialogClose>
+              </CardFooter>
+            </Card>
+          )}
+        </DialogContent>
+      </Dialog>
 
-            <input
-              placeholder="Prénom"
-              value={form.firstName}
-              onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-              required
-            />
-
-            <input
-              placeholder="Nom"
-              value={form.lastName}
-              onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-              required
-            />
-
-            <input
-              type="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              required
-            />
-
-            <select
-              value={form.subGroupId}
-              onChange={(e) => setForm({ ...form, subGroupId: e.target.value })}
-            >
-              <option value="">— Aucun sous-groupe —</option>
-
-              {subGroups.map((sg) => (
-                <option key={sg.id} value={sg.id}>
-                  {sg.group.name} — {sg.code} ({sg.session})
-                </option>
-              ))}
-            </select>
-
-            <div style={{ border: "1px solid #ddd", padding: 10, borderRadius: 4 }}>
-              <label style={{ fontWeight: "bold", display: "block", marginBottom: 8 }}>
-                Filières (multi-sélection)
-              </label>
-              {filieres.map((f) => (
-                <label key={f.id} style={{ display: "block", marginBottom: 4 }}>
-                  <input
-                    type="checkbox"
-                    checked={form.filiereIds.includes(f.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setForm({ ...form, filiereIds: [...form.filiereIds, f.id] });
-                      } else {
-                        setForm({ ...form, filiereIds: form.filiereIds.filter(id => id !== f.id) });
-                      }
-                    }}
-                  />
-                  {" "}{f.code} - {f.label || "Sans label"}
-                </label>
-              ))}
-              {filieres.length === 0 && (
-                <p style={{ color: "#999", fontSize: 12 }}>Aucune filière disponible</p>
-              )}
+      {/* MODAL FORMULAIRE MODERNE */}
+      <Dialog open={showForm} onOpenChange={v => !v && setShowForm(false)}>
+        <DialogContent className="max-w-xl w-full">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <DialogH>
+              <DialogT>{editingId ? "Modifier l'élève" : "Créer un élève"}</DialogT>
+            </DialogH>
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="flex flex-col items-center gap-2 w-full sm:w-1/3">
+                <div className="w-24 h-24 rounded-full bg-gray-100 overflow-hidden border-2 border-primary flex items-center justify-center">
+                  {form.photoUrl ? (
+                    <img src={form.photoUrl} alt="Photo élève" className="object-cover w-full h-full" />
+                  ) : (
+                    <span className="text-5xl text-gray-400">👤</span>
+                  )}
+                </div>
+                <PhotoUploader onUpload={url => setForm({ ...form, photoUrl: url })} />
+                <Input
+                  placeholder="URL photo (optionnel)"
+                  value={form.photoUrl}
+                  onChange={e => setForm({ ...form, photoUrl: e.target.value })}
+                  className="mt-2"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                <Input placeholder="Prénom" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} required />
+                <Input placeholder="Nom" value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} required />
+                <Input type="email" placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
+                <div className="flex flex-col">
+                  <label htmlFor="dateOfBirth" className="text-xs font-medium mb-1">Date de naissance</label>
+                  <Input id="dateOfBirth" type="date" value={form.dateOfBirth} onChange={e => setForm({ ...form, dateOfBirth: e.target.value })} />
+                </div>
+                <Input placeholder="Téléphone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                <Input placeholder="Adresse" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
+                <Select value={form.gender} onValueChange={v => setForm({ ...form, gender: v as "M"|"F"|"Autre" })}>
+                  <SelectTrigger><SelectValue placeholder="Sexe" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="M">Homme</SelectItem>
+                    <SelectItem value="F">Femme</SelectItem>
+                    <SelectItem value="Autre">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input placeholder="Nationalité" value={form.nationality} onChange={e => setForm({ ...form, nationality: e.target.value })} />
+                <Select value={form.status} onValueChange={v => setForm({ ...form, status: v as "actif"|"inactif"|"archivé" })}>
+                  <SelectTrigger><SelectValue placeholder="Statut" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="actif">Actif</SelectItem>
+                    <SelectItem value="inactif">Inactif</SelectItem>
+                    <SelectItem value="archivé">Archivé</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex flex-col">
+                  <label htmlFor="registrationDate" className="text-xs font-medium mb-1">Date d'inscription</label>
+                  <Input id="registrationDate" type="date" value={form.registrationDate} onChange={e => setForm({ ...form, registrationDate: e.target.value })} />
+                </div>
+                <Input placeholder="Numéro étudiant" value={form.studentNumber} onChange={e => setForm({ ...form, studentNumber: e.target.value })} />
+                <div className="flex items-center gap-2 col-span-2">
+                  <input type="checkbox" checked={form.scholarship} onChange={e => setForm({ ...form, scholarship: e.target.checked })} id="scholarship" className="accent-primary" />
+                  <label htmlFor="scholarship" className="text-sm">Boursier</label>
+                  <input type="checkbox" checked={form.handicap} onChange={e => setForm({ ...form, handicap: e.target.checked })} id="handicap" className="accent-primary" />
+                  <label htmlFor="handicap" className="text-sm">Handicap</label>
+                </div>
+                <div className="col-span-2">
+                  <Select value={form.subGroupId} onValueChange={v => setForm({ ...form, subGroupId: v })}>
+                    <SelectTrigger><SelectValue placeholder="Sous-groupe" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— Aucun sous-groupe —</SelectItem>
+                      {subGroups.map((sg) => (
+                        <SelectItem key={sg.id} value={sg.id}>
+                          {sg.group.name} — {sg.code} ({sg.session})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2 border rounded-lg p-3">
+                  <div className="font-semibold mb-2">Filières (multi-sélection)</div>
+                  <div className="flex flex-wrap gap-3">
+                    {filieres.map((f) => (
+                      <label key={f.id} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={form.filiereIds.includes(f.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setForm({ ...form, filiereIds: [...form.filiereIds, f.id] });
+                            } else {
+                              setForm({ ...form, filiereIds: form.filiereIds.filter(id => id !== f.id) });
+                            }
+                          }}
+                          className="accent-primary"
+                        />
+                        {f.code} - {f.label || "Sans label"}
+                      </label>
+                    ))}
+                    {filieres.length === 0 && (
+                      <span className="text-muted-foreground text-xs">Aucune filière disponible</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
-              <button type="button" onClick={() => setShowForm(false)}>
+            <DialogF>
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                 Annuler
-              </button>
-              <button type="submit" style={{ background: "green", color: "white" }}>
+              </Button>
+              <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
                 Enregistrer
-              </button>
-            </div>
-
+              </Button>
+            </DialogF>
             {tempPassword && (
-              <p style={{ marginTop: 10, color: "green" }}>
+              <div className="text-green-600 font-medium mt-2">
                 Mot de passe temporaire : <b>{tempPassword}</b>
-              </p>
+              </div>
             )}
           </form>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

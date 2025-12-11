@@ -88,6 +88,19 @@ model User {
   lastName  String
   role      String // "admin" | "administratif" | "prof" | "eleve"
 
+  // Champs élève additionnels
+  photoUrl        String?
+  dateOfBirth     DateTime?
+  phone           String?
+  address         String?
+  gender          String?
+  nationality     String?
+  status          String?
+  registrationDate DateTime?
+  studentNumber   String?
+  scholarship     Boolean?
+  handicap        Boolean?
+
   // 🔥 Élève rattaché à plusieurs sous-groupes (via UserSubGroups)
   subGroups SubGroup[] @relation("UserSubGroups")
 
