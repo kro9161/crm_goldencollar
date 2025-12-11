@@ -10,6 +10,7 @@ import { useArchivedYear } from "../../hooks/useArchivedYear";
  };
 
 type SessionWithAttendance = {
+  id: string;
   date: string;
   startTime: string;
   endTime: string;
@@ -181,7 +182,7 @@ export default function Absences() {
                             new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
                           )
                           .map((s) => (
-                            <tr key={s.startTime + s.courseName} className="border-b hover:bg-gray-50">
+                            <tr key={s.id} className="border-b hover:bg-gray-50">
                               <td className="px-4 py-3 font-mono text-sm">
                                 {new Date(s.startTime).toLocaleTimeString("fr-FR", { 
                                   hour: "2-digit", 
@@ -221,7 +222,7 @@ export default function Absences() {
                               </td>
                               <td className="px-4 py-3 text-center">
                                 <button
-                                  onClick={() => handleViewDetails(s.startTime + s.courseName)}
+                                  onClick={() => handleViewDetails(s.id)}
                                   className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
                                 >
                                   📋 Détails
