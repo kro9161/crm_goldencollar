@@ -147,7 +147,7 @@ const [modalRooms, setModalRooms] = useState<ApiRoom[]>([]);
     const user: TokenPayload = jwtDecode<TokenPayload>(token);
 
     const yearParam = `?academicYearId=${academicYearId}`;
-    fetch(`http://localhost:4000/planning${yearParam}`, {
+    fetch(`${import.meta.env.VITE_API_URL}/planning${yearParam}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -379,7 +379,7 @@ const [modalRooms, setModalRooms] = useState<ApiRoom[]>([]);
     const end = info.event.end?.toISOString();
 
     try {
-      const res = await fetch(`http://localhost:4000/planning/${info.event.id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/planning/${info.event.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -431,7 +431,7 @@ const [modalRooms, setModalRooms] = useState<ApiRoom[]>([]);
   const handleEditSave = async (): Promise<void> => {
     if (!selectedEvent || !token) return;
 
-    const res = await fetch(`http://localhost:4000/planning/${selectedEvent.id}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/planning/${selectedEvent.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
@@ -473,7 +473,7 @@ const [modalRooms, setModalRooms] = useState<ApiRoom[]>([]);
   const handleDelete = async (): Promise<void> => {
     if (!selectedEvent || !token) return;
 
-    const res = await fetch(`http://localhost:4000/planning/${selectedEvent.id}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/planning/${selectedEvent.id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
