@@ -6,6 +6,32 @@ export interface Filiere {
   level?: string;
 }
 
+export interface Paiement {
+  id: string;
+  amount: number;
+  status: string;
+  dueDate?: string;
+  paidAt?: string;
+}
+
+export interface Absence {
+  id: string;
+  status: string;
+  justified?: boolean;
+  reason?: string;
+  session?: {
+    course?: { name?: string };
+    startTime?: string;
+  };
+}
+
+export interface Note {
+  id: string;
+  valeur: number;
+  commentaire?: string;
+  course?: { name?: string };
+}
+
 export interface FicheEleveCardProps {
   photoUrl?: string;
   nom: string;
@@ -30,6 +56,9 @@ export interface FicheEleveCardProps {
   boursier?: boolean;
   handicap?: boolean;
   sousGroupe?: string;
+  paiements?: Paiement[];
+  absences?: Absence[];
+  notes?: Note[];
 }
 
 import React from "react";
@@ -92,6 +121,9 @@ export default function FicheEleveCard(props: FicheEleveCardProps) {
     inscription,
     badges = [],
     actions,
+    paiements = [],
+    absences = [],
+    notes = [],
   } = props;
   // ...déstructuration terminée, on peut retourner le JSX
   return (
@@ -247,6 +279,57 @@ export default function FicheEleveCard(props: FicheEleveCardProps) {
       </div>
       {/* Actions */}
       {actions && <div className="mt-6 flex gap-3">{actions}</div>}
+
+      {/* Section Paiements */}
+      {paiements.length > 0 && (
+        <section className="w-full mt-8">
+          <h3 className="text-lg font-bold mb-2">Paiements</h3>
+          <ul className="space-y-1">
+            {paiements.map((p) => (
+              <li key={p.id} className="flex justify-between items-center border-b py-1">
+                <span>{p.amount}€</span>
+                <span>{p.status}</span>
+                <span>{p.dueDate ? new Date(p.dueDate).toLocaleDateString() : ""}</span>
+                {p.paidAt && <span className="text-green-600">Payé le {new Date(p.paidAt).toLocaleDateString()}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Section Absences */}
+      {absences.length > 0 && (
+        <section className="w-full mt-8">
+          <h3 className="text-lg font-bold mb-2">Absences</h3>
+          <ul className="space-y-1">
+            {absences.map((a) => (
+              <li key={a.id} className="flex justify-between items-center border-b py-1">
+                <span>{a.session?.course?.name}</span>
+                <span>{a.session?.startTime ? new Date(a.session.startTime).toLocaleDateString() : ""}</span>
+                <span>{a.status}</span>
+                {a.justified && <span className="text-blue-600">(justifiée)</span>}
+                {a.reason && <span className="text-gray-500">{a.reason}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Section Notes */}
+      {notes.length > 0 && (
+        <section className="w-full mt-8">
+          <h3 className="text-lg font-bold mb-2">Notes</h3>
+          <ul className="space-y-1">
+            {notes.map((n) => (
+              <li key={n.id} className="flex justify-between items-center border-b py-1">
+                <span>{n.course?.name}</span>
+                <span>{n.valeur}</span>
+                {n.commentaire && <span className="text-gray-500">{n.commentaire}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
