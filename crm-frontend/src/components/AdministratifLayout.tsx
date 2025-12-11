@@ -95,7 +95,14 @@ export default function AdministratifLayout() {
             Authorization: `Bearer ${token}`,
           },
         });
-        const data = (await res.json()) as any[];
+        type ApiAcademicYear = {
+          id: string;
+          name: string;
+          session: string;
+          isCurrent: boolean;
+          isArchived: boolean;
+        };
+        const data = (await res.json()) as ApiAcademicYear[];
         const opts = data.map((y) => ({
           id: y.id,
           label: `${y.name} (${formatSession(y.session, "short")})${y.isArchived ? " 📦" : ""}`,
