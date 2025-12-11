@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
 import { useArchivedYear } from "../../hooks/useArchivedYear";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader as DialogH, DialogTitle as DialogT, DialogFooter as DialogF, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,7 @@ type Filiere = {
   id: string;
   code: string;
   label?: string;
+  level?: string;
 };
 
 type Eleve = {
@@ -377,55 +377,69 @@ export default function Eleves() {
         </table>
       </div>
 
-      {/* MODAL FICHE ELEVE MODERNE */}
+      {/* MODAL FICHE ELEVE MODERNE 2025 */}
       <Dialog open={!!selectedEleve} onOpenChange={v => !v && setSelectedEleve(null)}>
-        <DialogContent className="max-w-lg w-full">
-          <DialogH>
-            <DialogT>Fiche élève</DialogT>
-            <p className="text-muted-foreground text-sm">Toutes les informations détaillées de l'élève</p>
-          </DialogH>
-          {selectedEleve && (
-            <Card className="shadow-none border-none p-0">
-              <CardHeader className="flex flex-col items-center gap-2 pb-2">
-                <div className="w-24 h-24 rounded-full bg-gray-100 overflow-hidden border-2 border-primary mb-2 flex items-center justify-center">
+        <DialogContent className="max-w-2xl w-full p-0 bg-gradient-to-br from-white to-blue-50 border-0">
+          <div className="flex flex-col items-center py-8 px-6">
+            <DialogH className="w-full flex flex-col items-center mb-2">
+              <DialogT className="text-3xl font-extrabold tracking-tight text-blue-900 flex items-center gap-2">
+                <span>Fiche élève</span>
+                {selectedEleve?.status === "actif" && <span className="ml-2 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Actif</span>}
+                {selectedEleve?.status === "inactif" && <span className="ml-2 px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold">Inactif</span>}
+                {selectedEleve?.status === "archivé" && <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-semibold">Archivé</span>}
+              </DialogT>
+              <p className="text-muted-foreground text-sm mt-1">Toutes les informations détaillées de l'élève</p>
+            </DialogH>
+            {selectedEleve && (
+              <div className="flex flex-col items-center w-full">
+                <div className="w-28 h-28 rounded-full bg-gray-100 overflow-hidden border-4 border-blue-300 shadow mb-4 flex items-center justify-center">
                   {selectedEleve.photoUrl ? (
                     <img src={selectedEleve.photoUrl} alt="Photo élève" className="object-cover w-full h-full" />
                   ) : (
-                    <span className="text-5xl text-gray-400">👤</span>
+                    <span className="text-6xl text-gray-300">👤</span>
                   )}
                 </div>
-                <CardTitle className="text-2xl font-bold text-center">
+                <div className="text-2xl font-bold text-blue-900 text-center flex items-center gap-2">
                   {selectedEleve.firstName} {selectedEleve.lastName}
-                </CardTitle>
-                <div className="text-sm text-muted-foreground">{selectedEleve.email}</div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                  <div><span className="font-semibold">Date de naissance :</span> {selectedEleve.dateOfBirth || "-"}</div>
-                  <div><span className="font-semibold">Téléphone :</span> {selectedEleve.phone || "-"}</div>
-                  <div><span className="font-semibold">Adresse :</span> {selectedEleve.address || "-"}</div>
-                  <div><span className="font-semibold">Sexe :</span> {selectedEleve.gender || "-"}</div>
-                  <div><span className="font-semibold">Nationalité :</span> {selectedEleve.nationality || "-"}</div>
-                  <div><span className="font-semibold">Statut :</span> {selectedEleve.status || "-"}</div>
-                  <div><span className="font-semibold">Date inscription :</span> {selectedEleve.registrationDate || "-"}</div>
-                  <div><span className="font-semibold">Numéro étudiant :</span> {selectedEleve.studentNumber || "-"}</div>
-                  <div className="sm:col-span-2"><span className="font-semibold">Filières :</span> {selectedEleve.filieres?.map((f: Filiere) => `${f.code} - ${f.label || ''}`).join(", ") || "-"}</div>
-                  <div><span className="font-semibold">Sous-groupe :</span> {selectedEleve.subGroup?.code || "-"}</div>
-                  <div><span className="font-semibold">Session :</span> {selectedEleve.subGroup?.session || "-"}</div>
-                  <div><span className="font-semibold">Groupe :</span> {selectedEleve.subGroup?.group?.name || "-"}</div>
-                  <div><span className="font-semibold">Boursier :</span> {selectedEleve.scholarship ? "Oui" : "Non"}</div>
-                  <div><span className="font-semibold">Handicap :</span> {selectedEleve.handicap ? "Oui" : "Non"}</div>
-                  {/* Ajout d'un affichage debug pour tous les champs restants */}
-                  {/* <pre className="col-span-2 text-xs bg-gray-50 p-2 mt-2 rounded">{JSON.stringify(selectedEleve, null, 2)}</pre> */}
                 </div>
-              </CardContent>
-              <CardFooter className="flex justify-end">
-                <DialogClose asChild>
-                  <Button variant="outline">Fermer</Button>
-                </DialogClose>
-              </CardFooter>
-            </Card>
-          )}
+                <div className="text-base text-blue-700 mb-2">{selectedEleve.email}</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 w-full mt-4 text-[1rem]">
+                  <div><span className="font-semibold text-blue-800">🎂 Date de naissance :</span> {selectedEleve.dateOfBirth ? new Date(selectedEleve.dateOfBirth).toLocaleDateString() : "-"}</div>
+                  <div><span className="font-semibold text-blue-800">📞 Téléphone :</span> {selectedEleve.phone || "-"}</div>
+                  <div><span className="font-semibold text-blue-800">🏠 Adresse :</span> {selectedEleve.address || "-"}</div>
+                  <div><span className="font-semibold text-blue-800">🧑 Sexe :</span> {selectedEleve.gender || "-"}</div>
+                  <div><span className="font-semibold text-blue-800">🌍 Nationalité :</span> {selectedEleve.nationality || "-"}</div>
+                  <div><span className="font-semibold text-blue-800">🆔 Numéro étudiant :</span> {selectedEleve.studentNumber || "-"}</div>
+                  <div><span className="font-semibold text-blue-800">🗓️ Date inscription :</span> {selectedEleve.registrationDate ? new Date(selectedEleve.registrationDate).toLocaleDateString() : "-"}</div>
+                  <div><span className="font-semibold text-blue-800">📚 Session d'inscription :</span> {selectedEleve.subGroup?.session || "-"}</div>
+                  <div>
+                    <span className="font-semibold text-blue-800">🎓 Filières :</span> {selectedEleve.filieres?.length ? (
+                      <ul className="list-disc ml-5 space-y-1">
+                        {selectedEleve.filieres.map((f: Filiere, idx: number) => (
+                          <li key={f.id || idx}>
+                            <span className="font-semibold">{f.code}</span>
+                            {f.label && ` – ${f.label}`}
+                            {f.level && (
+                              <span className="ml-2 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold align-middle">{f.level}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : "-"}
+                  </div>
+                  <div><span className="font-semibold text-blue-800">👥 Sous-groupe :</span> {selectedEleve.subGroup?.code || "-"}</div>
+                  <div><span className="font-semibold text-blue-800">🏢 Groupe :</span> {selectedEleve.subGroup?.group?.name || "-"}</div>
+                  <div><span className="font-semibold text-blue-800">💸 Boursier :</span> {selectedEleve.scholarship ? <span className="inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Oui</span> : <span className="inline-block px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold">Non</span>}</div>
+                  <div><span className="font-semibold text-blue-800">♿ Handicap :</span> {selectedEleve.handicap ? <span className="inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Oui</span> : <span className="inline-block px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold">Non</span>}</div>
+                </div>
+                <div className="w-full flex justify-end mt-8">
+                  <DialogClose asChild>
+                    <Button variant="outline">Fermer</Button>
+                  </DialogClose>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

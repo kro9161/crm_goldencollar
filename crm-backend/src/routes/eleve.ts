@@ -198,6 +198,7 @@ router.get("/", async (req, res) => {
     }
 
 
+
     const enrollments = await prisma.studentEnrollment.findMany({
       where: {
         academicYearId,
@@ -206,7 +207,6 @@ router.get("/", async (req, res) => {
       } as any,
       include: {
         student: {
-          where: { deletedAt: null },
           include: {
             subGroups: {
               where: { deletedAt: null },
@@ -224,7 +224,7 @@ router.get("/", async (req, res) => {
 
     const eleves = enrollments
       .map(e => e.student)
-      .filter((u): u is NonNullable<typeof u> => !!u)
+      .filter((u): u is NonNullable<typeof u> => !!u && u.deletedAt === null)
       .map(u => ({
         id: u.id,
         email: u.email,

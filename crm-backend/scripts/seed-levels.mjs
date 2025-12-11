@@ -11,6 +11,7 @@ async function main() {
     { code: 'BAC+3', label: 'Baccalauréat + 3' },
     { code: 'BAC+4', label: 'Baccalauréat + 4' },
     { code: 'BAC+5', label: 'Baccalauréat + 5' },
+    { code: 'BAC+6', label: 'Baccalauréat + 6' },
   ];
 
   for (const level of levels) {
