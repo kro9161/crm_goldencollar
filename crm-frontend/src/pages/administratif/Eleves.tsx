@@ -78,6 +78,11 @@ export default function Eleves() {
   const [tempPassword, setTempPassword] = useState("");
   const [selectedEleve, setSelectedEleve] = useState<Eleve | null>(null);
 
+  // Ajout hooks pour paiements, absences, notes
+  const [paiements, setPaiements] = useState([]);
+  const [absences, setAbsences] = useState([]);
+  const [notes, setNotes] = useState([]);
+
   const [form, setForm] = useState<EleveForm>({
     firstName: "",
     lastName: "",
@@ -102,6 +107,32 @@ export default function Eleves() {
   const token = localStorage.getItem("token");
 
   // -----------------------------
+    // 🔹 Charger paiements, absences, notes pour la fiche élève
+    useEffect(() => {
+      if (!selectedEleve) return;
+      const token = localStorage.getItem("token");
+
+      // Paiements
+      fetch(`${import.meta.env.VITE_API_URL}/payments?studentId=${selectedEleve.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(setPaiements);
+
+      // Absences
+      fetch(`${import.meta.env.VITE_API_URL}/eleve/absences/${selectedEleve.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(setAbsences);
+
+      // Notes
+      fetch(`${import.meta.env.VITE_API_URL}/notes/eleve/${selectedEleve.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(setNotes);
+    }, [selectedEleve]);
   // 🔹 Charger élèves + sous-groupes
   // -----------------------------
   const fetchData = useCallback(async () => {
@@ -402,6 +433,9 @@ export default function Eleves() {
                     selectedEleve.scholarship ? "Boursier" : undefined,
                     selectedEleve.handicap ? "Handicap" : undefined,
                   ].filter(Boolean) as string[]}
+                  paiements={paiements}
+                  absences={absences}
+                  notes={notes}
                   actions={
                     <DialogClose asChild>
                       <Button variant="outline">Fermer</Button>

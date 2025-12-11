@@ -44,7 +44,7 @@ export default function Courses() {
     professorIds: [] as string[],
     professorMainId: "",
     subGroupIds: [] as string[],
-    filiereId: "",
+    filiereId: "", // Remplace filiereIds par filiereId (string)
     academicYearId: academicYearId || "",
   });
 
@@ -118,7 +118,7 @@ export default function Courses() {
       professorIds: [],
       professorMainId: "",
       subGroupIds: [],
-      filiereId: "",
+      filiereId: "", // Remplace filiereIds par filiereId
       academicYearId: academicYearId || "",
     });
     setShowForm(true);
@@ -126,7 +126,6 @@ export default function Courses() {
 
   const openEdit = (c: Course) => {
     setEditingId(c.id);
-
     setFormData({
       name: c.name,
       type: c.type || "",
@@ -139,10 +138,9 @@ export default function Courses() {
       professorIds: c.professors?.map((p) => p.id) || [],
       professorMainId: c.professorMain?.id || "",
       subGroupIds: c.subGroups?.map((sg) => sg.id) || [],
-      filiereId: c.filiere?.id || "",
+      filiereId: c.filiere?.id || "", // Correction ici
       academicYearId: academicYearId || "",
     });
-
     setShowForm(true);
   };
 
@@ -339,206 +337,139 @@ export default function Courses() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <form
-            onSubmit={handleSubmit}
-            className="bg-white p-6 rounded-lg shadow-lg w-[420px] grid gap-3"
-          >
-            <h3 className="text-xl font-semibold">
-              {editingId ? "Modifier le module" : "Nouveau module"}
-            </h3>
-
-            <p className="text-sm text-gray-600">
-              Année : <strong>{formData.academicYearId}</strong>
-            </p>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Filière *</label>
-              <select
-                className="border rounded p-2 w-full"
-                value={formData.filiereId}
-                onChange={(e) =>
-                  setFormData({ ...formData, filiereId: e.target.value })
-                }
-                required
-              >
-                <option value="">-- Sélectionner une filière --</option>
-                {filieres.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.code} {f.label ? `(${f.label})` : ""} - {f.level?.code || ""}
-                  </option>
-                ))}
-              </select>
-              {formData.filiereId && (
-                <p className="text-xs text-blue-600">
-                  Niveau: <strong>{filieres.find(f => f.id === formData.filiereId)?.level?.code}</strong>
-                </p>
-              )}
-            </div>
-
-            <input
-              className="border rounded p-2"
-              placeholder="Nom du module"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              required
-            />
-
-            <input
-              className="border rounded p-2"
-              placeholder="Type (Cours, TD...)"
-              value={formData.type}
-              onChange={(e) =>
-                setFormData({ ...formData, type: e.target.value })
-              }
-            />
-
-            <input
-              className="border rounded p-2"
-              placeholder="Domaine"
-              value={formData.domain}
-              onChange={(e) =>
-                setFormData({ ...formData, domain: e.target.value })
-              }
-            />
-
-            <input
-              type="number"
-              className="border rounded p-2"
-              placeholder="Heures totales"
-              value={formData.totalHours}
-              onChange={(e) =>
-                setFormData({ ...formData, totalHours: e.target.value })
-              }
-            />
-
-            <input
-              type="number"
-              className="border rounded p-2"
-              placeholder="Nombre de séances"
-              value={formData.totalSessions}
-              onChange={(e) =>
-                setFormData({ ...formData, totalSessions: e.target.value })
-              }
-            />
-
-            <input
-              className="border rounded p-2"
-              placeholder="Jour conseillé (Lundi, Mardi...)"
-              value={formData.day}
-              onChange={(e) =>
-                setFormData({ ...formData, day: e.target.value })
-              }
-            />
-
-            <input
-              type="time"
-              className="border rounded p-2"
-              value={formData.startTime}
-              onChange={(e) =>
-                setFormData({ ...formData, startTime: e.target.value })
-              }
-            />
-
-            <input
-              type="time"
-              className="border rounded p-2"
-              value={formData.endTime}
-              onChange={(e) =>
-                setFormData({ ...formData, endTime: e.target.value })
-              }
-            />
-
-            <label className="font-semibold mt-2">Filière :</label>
-            <select
-              className="border rounded p-2"
-              value={formData.filiereId}
-              onChange={(e) =>
-                setFormData({ ...formData, filiereId: e.target.value })
-              }
+          <div className="w-full max-w-2xl">
+            <form
+              onSubmit={handleSubmit}
+              className="bg-white p-8 rounded-lg shadow-lg w-full space-y-6"
             >
-              <option value="">— Aucune filière —</option>
-              {filieres.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.code} - {f.label || "Sans label"}
-                </option>
-              ))}
-            </select>
-
-            <label className="font-semibold mt-2">Sous-groupes :</label>
-            <div className="border p-2 max-h-32 overflow-y-auto mb-3">
-              {subGroups.map((sg) => (
-                <label key={sg.id} className="block text-sm">
-                  <input
-                    type="checkbox"
-                    checked={formData.subGroupIds.includes(sg.id)}
-                    onChange={() => toggleSubGroup(sg.id)}
-                  />{" "}
-                  {sg.group.name} — {sg.code}
-                </label>
-              ))}
-            </div>
-
-            <label className="font-semibold">Professeurs :</label>
-            <div className="border p-2 max-h-32 overflow-y-auto mb-3">
-              {profs.map((p) => (
-                <label key={p.id} className="block text-sm">
-                  <input
-                    type="checkbox"
-                    checked={formData.professorIds.includes(p.id)}
-                    onChange={() => toggleProf(p.id)}
-                  />{" "}
-                  {p.firstName} {p.lastName}
-                </label>
-              ))}
-            </div>
-
-            {formData.professorIds.length > 1 && (
-              <>
-                <label className="font-semibold">Prof principal :</label>
-                <select
-                  className="border rounded p-2"
-                  value={formData.professorMainId}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      professorMainId: e.target.value,
-                    })
-                  }
-                >
-                  <option value="">— Aucun —</option>
-                  {formData.professorIds.map((id) => {
-                    const p = profs.find((x) => x.id === id);
-                    return (
-                      p && (
-                        <option key={id} value={id}>
-                          {p.firstName} {p.lastName}
+              <h3 className="text-2xl font-bold mb-4">{editingId ? "Modifier le module" : "Nouveau module"}</h3>
+              <p className="text-sm text-gray-600 mb-2">
+                Année : <strong>{formData.academicYearId}</strong>
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="flex flex-col">
+                  <label htmlFor="name" className="text-xs font-medium mb-1">Nom du module</label>
+                  <input id="name" className="border rounded p-2" placeholder="Nom du module" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="type" className="text-xs font-medium mb-1">Type (Cours, TD...)</label>
+                  <input id="type" className="border rounded p-2" placeholder="Type" value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="domain" className="text-xs font-medium mb-1">Domaine</label>
+                  <input id="domain" className="border rounded p-2" placeholder="Domaine" value={formData.domain} onChange={e => setFormData({ ...formData, domain: e.target.value })} />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="totalHours" className="text-xs font-medium mb-1">Heures totales</label>
+                  <input id="totalHours" type="number" className="border rounded p-2" placeholder="Heures totales" value={formData.totalHours} onChange={e => setFormData({ ...formData, totalHours: e.target.value })} />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="totalSessions" className="text-xs font-medium mb-1">Nombre de séances</label>
+                  <input id="totalSessions" type="number" className="border rounded p-2" placeholder="Nombre de séances" value={formData.totalSessions} onChange={e => setFormData({ ...formData, totalSessions: e.target.value })} />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="day" className="text-xs font-medium mb-1">Jour conseillé</label>
+                  <input id="day" className="border rounded p-2" placeholder="Jour conseillé (Lundi, Mardi...)" value={formData.day} onChange={e => setFormData({ ...formData, day: e.target.value })} />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="startTime" className="text-xs font-medium mb-1">Heure début</label>
+                  <input id="startTime" type="time" className="border rounded p-2" value={formData.startTime} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="endTime" className="text-xs font-medium mb-1">Heure fin</label>
+                  <input id="endTime" type="time" className="border rounded p-2" value={formData.endTime} onChange={e => setFormData({ ...formData, endTime: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
+                <div>
+                  <label className="font-semibold">Sous-groupes :</label>
+                  <div className="border p-2 max-h-32 overflow-y-auto mb-3 rounded">
+                    {subGroups.map((sg) => (
+                      <label key={sg.id} className="block text-sm">
+                        <input
+                          type="checkbox"
+                          checked={formData.subGroupIds.includes(sg.id)}
+                          onChange={() => toggleSubGroup(sg.id)}
+                        /> {sg.group.name} — {sg.code}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                {/* FILIERE : affichée seulement si sous-groupe sélectionné */}
+                {formData.subGroupIds.length > 0 && (
+                  <div>
+                    <label className="font-semibold">Filière :</label>
+                    <select
+                      className="border rounded p-2 w-full"
+                      value={formData.filiereId}
+                      onChange={e => setFormData({ ...formData, filiereId: e.target.value })}
+                    >
+                      <option value="">— Sélectionner une filière —</option>
+                      {filieres.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.code} - {f.label || "Sans label"}
                         </option>
-                      )
-                    );
-                  })}
-                </select>
-              </>
-            )}
-
-            <div className="flex justify-between mt-4">
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="px-4 py-2 bg-gray-300 rounded"
-              >
-                Annuler
-              </button>
-
-              <button
-                type="submit"
-                className="px-4 py-2 bg-green-600 text-white rounded"
-              >
-                Enregistrer
-              </button>
-            </div>
-          </form>
+                      ))}
+                    </select>
+                    {formData.filiereId && (
+                      <p className="text-xs text-blue-600 mt-2">
+                        Niveau : <strong>{filieres.find(f => f.id === formData.filiereId)?.level?.code}</strong>
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="mt-4">
+                <label className="font-semibold">Professeurs :</label>
+                <div className="border p-2 max-h-32 overflow-y-auto mb-3 rounded">
+                  {profs.map((p) => (
+                    <label key={p.id} className="block text-sm">
+                      <input
+                        type="checkbox"
+                        checked={formData.professorIds.includes(p.id)}
+                        onChange={() => toggleProf(p.id)}
+                      /> {p.firstName} {p.lastName}
+                    </label>
+                  ))}
+                </div>
+                {formData.professorIds.length > 1 && (
+                  <div className="mt-2">
+                    <label className="font-semibold">Prof principal :</label>
+                    <select
+                      className="border rounded p-2 w-full"
+                      value={formData.professorMainId}
+                      onChange={e =>
+                        setFormData({
+                          ...formData,
+                          professorMainId: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">— Aucun —</option>
+                      {formData.professorIds.map((id) => {
+                        const p = profs.find((x) => x.id === id);
+                        return (
+                          p && (
+                            <option key={id} value={id}>
+                              {p.firstName} {p.lastName}
+                            </option>
+                          )
+                        );
+                      })}
+                    </select>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-between mt-6">
+                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-300 rounded">
+                  Annuler
+                </button>
+                <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">
+                  Enregistrer
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

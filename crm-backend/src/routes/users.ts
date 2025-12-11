@@ -76,7 +76,23 @@ router.get("/", async (req, res) => {
 
 // 2) CREATE USER
 router.post("/", async (req: AuthedRequest, res) => {
-  const { email, firstName, lastName, role, subGroupCodes, academicYearId } = req.body;
+  const {
+    email,
+    firstName,
+    lastName,
+    role,
+    subGroupCodes,
+    academicYearId,
+    phone,
+    address,
+    photoUrl,
+    dateOfBirth,
+    nationality,
+    status,
+    teacherNumber,
+    specialty,
+    hireDate
+  } = req.body;
 
   if (!email || !firstName || !lastName || !role) {
     return res.status(400).json({ error: "Champs obligatoires manquants." });
@@ -121,6 +137,15 @@ router.post("/", async (req: AuthedRequest, res) => {
           lastName: lastName.trim(),
           role,
           password: bcrypt.hashSync(tmpPass, 10),
+          phone: phone || null,
+          address: address || null,
+          photoUrl: photoUrl || null,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+          nationality: nationality || null,
+          status: status || null,
+          teacherNumber: teacherNumber || null,
+          specialty: specialty || null,
+          hireDate: hireDate ? new Date(hireDate) : null,
           subGroups: subGroupCodes
             ? { connect: subGroupCodes.map((code: string) => ({ code })) }
             : undefined,
@@ -154,7 +179,22 @@ router.post("/", async (req: AuthedRequest, res) => {
 // 3) UPDATE USER
 router.patch("/:id", async (req, res) => {
   const { id } = req.params;
-  const { email, firstName, lastName, role, subGroupCodes } = req.body;
+  const {
+    email,
+    firstName,
+    lastName,
+    role,
+    subGroupCodes,
+    phone,
+    address,
+    photoUrl,
+    dateOfBirth,
+    nationality,
+    status,
+    teacherNumber,
+    specialty,
+    hireDate
+  } = req.body;
 
   try {
     const updated = await prisma.user.update({
@@ -164,11 +204,20 @@ router.patch("/:id", async (req, res) => {
         ...(firstName ? { firstName: firstName.trim() } : {}),
         ...(lastName ? { lastName: lastName.trim() } : {}),
         ...(role ? { role } : {}),
+        ...(phone !== undefined ? { phone } : {}),
+        ...(address !== undefined ? { address } : {}),
+        ...(photoUrl !== undefined ? { photoUrl } : {}),
+        ...(dateOfBirth !== undefined ? { dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null } : {}),
+        ...(nationality !== undefined ? { nationality } : {}),
+        ...(status !== undefined ? { status } : {}),
+        ...(teacherNumber !== undefined ? { teacherNumber } : {}),
+        ...(specialty !== undefined ? { specialty } : {}),
+        ...(hireDate !== undefined ? { hireDate: hireDate ? new Date(hireDate) : null } : {}),
         ...(subGroupCodes
           ? {
               subGroups: {
                 set: [],
-                connect: subGroupCodes.map(code => ({ code })),
+                connect: subGroupCodes.map((code: string) => ({ code })),
               },
             }
           : {}),

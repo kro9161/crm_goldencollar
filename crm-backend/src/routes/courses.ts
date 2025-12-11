@@ -39,6 +39,7 @@ router.get("/", requireRole("admin", "administratif", "prof"), async (req, res) 
         professors: { where: { deletedAt: null } },
         subGroups: { where: { deletedAt: null }, include: { group: true } },
         academicYear: true,
+          filiere: true,
       },
       orderBy: { name: "asc" },
     });
@@ -65,6 +66,7 @@ router.post("/", requireRole("admin", "administratif"), async (req, res) => {
       professorIds,
       subGroupIds,
       academicYearId,
+      filiereId,
     } = req.body;
     if (!academicYearId) {
       return res.status(400).json({ error: "academicYearId requis" });
@@ -78,6 +80,7 @@ router.post("/", requireRole("admin", "administratif"), async (req, res) => {
         totalHours: totalHours ? parseInt(totalHours) : null,
         totalSessions: totalSessions ? parseInt(totalSessions) : null,
         academicYearId,
+        filiereId: filiereId || null,
         professors: {
           connect: professorIds?.map((id: string) => ({ id })) || [],
         },
@@ -89,6 +92,7 @@ router.post("/", requireRole("admin", "administratif"), async (req, res) => {
         professors: true,
         subGroups: { include: { group: true } },
         academicYear: true,
+        filiere: true,
       },
     });
 
@@ -113,6 +117,7 @@ router.patch("/:id", requireRole("admin", "administratif"), async (req, res) => 
       totalSessions,
       professorIds,
       subGroupIds,
+      filiereId,
     } = req.body;
 
     const updated = await prisma.course.update({
@@ -123,6 +128,7 @@ router.patch("/:id", requireRole("admin", "administratif"), async (req, res) => 
         ...(domain && { domain }),
         ...(totalHours && { totalHours: parseInt(totalHours) }),
         ...(totalSessions && { totalSessions: parseInt(totalSessions) }),
+        ...(filiereId !== undefined && { filiereId: filiereId || null }),
         professors: {
           set: [],
           connect: professorIds?.map((id: string) => ({ id })) || [],
@@ -136,6 +142,7 @@ router.patch("/:id", requireRole("admin", "administratif"), async (req, res) => 
         professors: true,
         subGroups: { include: { group: true } },
         academicYear: true,
+        filiere: true,
       },
     });
 

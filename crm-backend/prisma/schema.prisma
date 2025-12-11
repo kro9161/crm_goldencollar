@@ -112,6 +112,11 @@ model User {
   createdSessions  CourseSession[] @relation("CreatedSessions")
   teachingSessions CourseSession[] @relation("TeachingSessions")
 
+  // Champs spécifiques professeur
+  teacherNumber    String?   @unique // Numéro unique professeur
+  specialty        String?   // Matière principale ou spécialité
+  hireDate         DateTime? // Date d'embauche
+
   enrollments   StudentEnrollment[]
   presences     Presence[]
   notes         Note[]

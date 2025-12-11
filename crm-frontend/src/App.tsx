@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 
 import Eleves from "./pages/administratif/Eleves";
-import Profs from "./pages/administratif/Profs"; // 🆕 import ici
+import Professeurs from "./pages/administratif/Professeurs";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProfDashboard from "./pages/ProfDashboard";
 import EleveDashboard from "./pages/EleveDashboard";
@@ -53,7 +53,7 @@ export default function App() {
             <Route path="dashboard" element={<Dashboard />} />
      
             <Route path="eleves" element={<Eleves />} />
-            <Route path="profs" element={<Profs />} /> {/* ✅ ajouté ici */}
+            <Route path="profs" element={<Professeurs />} />
             <Route path="modules" element={<Courses />} />
             <Route path="salles" element={<Salles />} />
             <Route path="absences" element={<Absences />} />
