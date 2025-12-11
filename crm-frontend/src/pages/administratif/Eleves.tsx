@@ -25,6 +25,20 @@ type Eleve = {
   email: string;
   firstName: string;
   lastName: string;
+  dateOfBirth?: string;
+  phone?: string;
+  address?: string;
+  gender?: "M" | "F" | "Autre";
+  nationality?: string;
+  status?: "actif" | "inactif" | "archivé";
+  registrationDate?: string;
+  studentNumber?: string;
+  photoUrl?: string;
+  legalGuardianName?: string;
+  legalGuardianPhone?: string;
+  legalGuardianEmail?: string;
+  scholarship?: boolean;
+  handicap?: boolean;
   subGroupId?: string | null;
   subGroup?: SubGroup | null;
   filieres?: Filiere[];
@@ -34,6 +48,20 @@ type EleveForm = {
   firstName: string;
   lastName: string;
   email: string;
+  dateOfBirth: string;
+  phone: string;
+  address: string;
+  gender: "M" | "F" | "Autre";
+  nationality: string;
+  status: "actif" | "inactif" | "archivé";
+  registrationDate: string;
+  studentNumber: string;
+  photoUrl: string;
+  legalGuardianName: string;
+  legalGuardianPhone: string;
+  legalGuardianEmail: string;
+  scholarship: boolean;
+  handicap: boolean;
   subGroupId: string;
   filiereIds: string[];
 };
@@ -52,6 +80,20 @@ export default function Eleves() {
     firstName: "",
     lastName: "",
     email: "",
+    dateOfBirth: "",
+    phone: "",
+    address: "",
+    gender: "M",
+    nationality: "",
+    status: "actif",
+    registrationDate: "",
+    studentNumber: "",
+    photoUrl: "",
+    legalGuardianName: "",
+    legalGuardianPhone: "",
+    legalGuardianEmail: "",
+    scholarship: false,
+    handicap: false,
     subGroupId: "",
     filiereIds: [],
   });
@@ -109,6 +151,20 @@ export default function Eleves() {
       firstName: "",
       lastName: "",
       email: "",
+      dateOfBirth: "",
+      phone: "",
+      address: "",
+      gender: "M",
+      nationality: "",
+      status: "actif",
+      registrationDate: "",
+      studentNumber: "",
+      photoUrl: "",
+      legalGuardianName: "",
+      legalGuardianPhone: "",
+      legalGuardianEmail: "",
+      scholarship: false,
+      handicap: false,
       subGroupId: "",
       filiereIds: [],
     });
@@ -125,6 +181,20 @@ export default function Eleves() {
       firstName: e.firstName,
       lastName: e.lastName,
       email: e.email,
+      dateOfBirth: e.dateOfBirth || "",
+      phone: e.phone || "",
+      address: e.address || "",
+      gender: e.gender || "M",
+      nationality: e.nationality || "",
+      status: e.status || "actif",
+      registrationDate: e.registrationDate || "",
+      studentNumber: e.studentNumber || "",
+      photoUrl: e.photoUrl || "",
+      legalGuardianName: e.legalGuardianName || "",
+      legalGuardianPhone: e.legalGuardianPhone || "",
+      legalGuardianEmail: e.legalGuardianEmail || "",
+      scholarship: e.scholarship ?? false,
+      handicap: e.handicap ?? false,
       subGroupId: e.subGroupId || "",
       filiereIds: e.filieres?.map(f => f.id) || [],
     });
