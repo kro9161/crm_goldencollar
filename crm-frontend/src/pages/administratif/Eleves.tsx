@@ -1,8 +1,10 @@
+type Filiere = { id: string; code: string; label?: string; level?: string };
 import { useEffect, useState, useCallback } from "react";
 import { useArchivedYear } from "../../hooks/useArchivedYear";
 import { Dialog, DialogContent, DialogHeader as DialogH, DialogTitle as DialogT, DialogFooter as DialogF, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import FicheEleveCard from "../../components/FicheEleveCard";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import PhotoUploader from "@/components/PhotoUploader";
 
@@ -19,14 +21,9 @@ type SubGroup = {
   group: Group;
 };
 
-type Filiere = {
-  id: string;
-  code: string;
-  label?: string;
-  level?: string;
-};
 
-type Eleve = {
+// Interface unique pour la fiche élève, alignée sur la réponse backend
+export interface Eleve {
   id: string;
   email: string;
   firstName: string;
@@ -38,17 +35,16 @@ type Eleve = {
   nationality?: string;
   status?: "actif" | "inactif" | "archivé";
   registrationDate?: string;
+  scholarship?: boolean;
+  handicap?: boolean;
   studentNumber?: string;
   photoUrl?: string;
   legalGuardianName?: string;
   legalGuardianPhone?: string;
-  legalGuardianEmail?: string;
-  scholarship?: boolean;
-  handicap?: boolean;
-  subGroupId?: string | null;
-  subGroup?: SubGroup | null;
-  filieres?: Filiere[];
-};
+  subGroups: SubGroup[];
+  filieres: Filiere[];
+  subGroup?: SubGroup;
+}
 
 type EleveForm = {
   firstName: string;
@@ -65,10 +61,9 @@ type EleveForm = {
   photoUrl: string;
   legalGuardianName: string;
   legalGuardianPhone: string;
-  legalGuardianEmail: string;
   scholarship: boolean;
   handicap: boolean;
-  subGroupId: string;
+  subGroupId?: string;
   filiereIds: string[];
 };
 
@@ -98,10 +93,9 @@ export default function Eleves() {
     photoUrl: "",
     legalGuardianName: "",
     legalGuardianPhone: "",
-    legalGuardianEmail: "",
     scholarship: false,
     handicap: false,
-    subGroupId: "",
+    subGroupId: undefined,
     filiereIds: [],
   });
 
@@ -120,14 +114,14 @@ export default function Eleves() {
 
     try {
       const yearParam = `?academicYearId=${academicYearId}`;
-          const [eRes, sgRes, fRes] = await Promise.all([
-            fetch(`${import.meta.env.VITE_API_URL}/eleves${yearParam}`, {
+      const [eRes, sgRes, fRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_URL}/eleves${yearParam}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-            fetch(`${import.meta.env.VITE_API_URL}/subgroups${yearParam}`, {
+        fetch(`${import.meta.env.VITE_API_URL}/subgroups${yearParam}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-            fetch(`${import.meta.env.VITE_API_URL}/filieres${yearParam}`, {
+        fetch(`${import.meta.env.VITE_API_URL}/filieres${yearParam}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -169,7 +163,7 @@ export default function Eleves() {
       photoUrl: "",
       legalGuardianName: "",
       legalGuardianPhone: "",
-      legalGuardianEmail: "",
+      // legalGuardianEmail removed
       scholarship: false,
       handicap: false,
       subGroupId: "",
@@ -199,10 +193,10 @@ export default function Eleves() {
       photoUrl: e.photoUrl || "",
       legalGuardianName: e.legalGuardianName || "",
       legalGuardianPhone: e.legalGuardianPhone || "",
-      legalGuardianEmail: e.legalGuardianEmail || "",
+      // legalGuardianEmail removed
       scholarship: e.scholarship ?? false,
       handicap: e.handicap ?? false,
-      subGroupId: e.subGroupId || "",
+      subGroupId: e.subGroup?.id || "",
       filiereIds: e.filieres?.map(f => f.id) || [],
     });
     setShowForm(true);
@@ -380,66 +374,44 @@ export default function Eleves() {
       {/* MODAL FICHE ELEVE MODERNE 2025 */}
       <Dialog open={!!selectedEleve} onOpenChange={v => !v && setSelectedEleve(null)}>
         <DialogContent className="max-w-2xl w-full p-0 bg-gradient-to-br from-white to-blue-50 border-0">
-          <div className="flex flex-col items-center py-8 px-6">
-            <DialogH className="w-full flex flex-col items-center mb-2">
-              <DialogT className="text-3xl font-extrabold tracking-tight text-blue-900 flex items-center gap-2">
-                <span>Fiche élève</span>
-                {selectedEleve?.status === "actif" && <span className="ml-2 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Actif</span>}
-                {selectedEleve?.status === "inactif" && <span className="ml-2 px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold">Inactif</span>}
-                {selectedEleve?.status === "archivé" && <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-semibold">Archivé</span>}
-              </DialogT>
-              <p className="text-muted-foreground text-sm mt-1">Toutes les informations détaillées de l'élève</p>
-            </DialogH>
-            {selectedEleve && (
-              <div className="flex flex-col items-center w-full">
-                <div className="w-28 h-28 rounded-full bg-gray-100 overflow-hidden border-4 border-blue-300 shadow mb-4 flex items-center justify-center">
-                  {selectedEleve.photoUrl ? (
-                    <img src={selectedEleve.photoUrl} alt="Photo élève" className="object-cover w-full h-full" />
-                  ) : (
-                    <span className="text-6xl text-gray-300">👤</span>
-                  )}
-                </div>
-                <div className="text-2xl font-bold text-blue-900 text-center flex items-center gap-2">
-                  {selectedEleve.firstName} {selectedEleve.lastName}
-                </div>
-                <div className="text-base text-blue-700 mb-2">{selectedEleve.email}</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 w-full mt-4 text-[1rem]">
-                  <div><span className="font-semibold text-blue-800">🎂 Date de naissance :</span> {selectedEleve.dateOfBirth ? new Date(selectedEleve.dateOfBirth).toLocaleDateString() : "-"}</div>
-                  <div><span className="font-semibold text-blue-800">📞 Téléphone :</span> {selectedEleve.phone || "-"}</div>
-                  <div><span className="font-semibold text-blue-800">🏠 Adresse :</span> {selectedEleve.address || "-"}</div>
-                  <div><span className="font-semibold text-blue-800">🧑 Sexe :</span> {selectedEleve.gender || "-"}</div>
-                  <div><span className="font-semibold text-blue-800">🌍 Nationalité :</span> {selectedEleve.nationality || "-"}</div>
-                  <div><span className="font-semibold text-blue-800">🆔 Numéro étudiant :</span> {selectedEleve.studentNumber || "-"}</div>
-                  <div><span className="font-semibold text-blue-800">🗓️ Date inscription :</span> {selectedEleve.registrationDate ? new Date(selectedEleve.registrationDate).toLocaleDateString() : "-"}</div>
-                  <div><span className="font-semibold text-blue-800">📚 Session d'inscription :</span> {selectedEleve.subGroup?.session || "-"}</div>
-                  <div>
-                    <span className="font-semibold text-blue-800">🎓 Filières :</span> {selectedEleve.filieres?.length ? (
-                      <ul className="list-disc ml-5 space-y-1">
-                        {selectedEleve.filieres.map((f: Filiere, idx: number) => (
-                          <li key={f.id || idx}>
-                            <span className="font-semibold">{f.code}</span>
-                            {f.label && ` – ${f.label}`}
-                            {f.level && (
-                              <span className="ml-2 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold align-middle">{f.level}</span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : "-"}
-                  </div>
-                  <div><span className="font-semibold text-blue-800">👥 Sous-groupe :</span> {selectedEleve.subGroup?.code || "-"}</div>
-                  <div><span className="font-semibold text-blue-800">🏢 Groupe :</span> {selectedEleve.subGroup?.group?.name || "-"}</div>
-                  <div><span className="font-semibold text-blue-800">💸 Boursier :</span> {selectedEleve.scholarship ? <span className="inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Oui</span> : <span className="inline-block px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold">Non</span>}</div>
-                  <div><span className="font-semibold text-blue-800">♿ Handicap :</span> {selectedEleve.handicap ? <span className="inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Oui</span> : <span className="inline-block px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold">Non</span>}</div>
-                </div>
-                <div className="w-full flex justify-end mt-8">
-                  <DialogClose asChild>
-                    <Button variant="outline">Fermer</Button>
-                  </DialogClose>
-                </div>
+          {selectedEleve && (
+            <>
+              <div className="pt-8 px-6 pb-2">
+                <FicheEleveCard
+                  photoUrl={selectedEleve.photoUrl}
+                  nom={selectedEleve.lastName}
+                  prenom={selectedEleve.firstName}
+                  filiere={{
+                    label: selectedEleve.filieres?.[0]?.label || selectedEleve.filieres?.[0]?.code || "",
+                    color: "#60a5fa",
+                  }}
+                  niveau={selectedEleve.filieres?.[0]?.level || undefined}
+                  session={selectedEleve.subGroup?.session || undefined}
+                  statut={selectedEleve.status}
+                  numeroEtudiant={selectedEleve.studentNumber}
+                  dateNaissance={selectedEleve.dateOfBirth ? new Date(selectedEleve.dateOfBirth).toLocaleDateString() : undefined}
+                  email={selectedEleve.email}
+                  telephone={selectedEleve.phone}
+                  adresse={selectedEleve.address}
+                  genre={selectedEleve.gender}
+                  nationalite={selectedEleve.nationality}
+                  responsableNom={selectedEleve.legalGuardianName}
+                  responsableTel={selectedEleve.legalGuardianPhone}
+                  inscription={selectedEleve.registrationDate ? new Date(selectedEleve.registrationDate).toLocaleDateString() : undefined}
+                  badges={[
+                    selectedEleve.scholarship ? "Boursier" : undefined,
+                    selectedEleve.handicap ? "Handicap" : undefined,
+                  ].filter(Boolean) as string[]}
+                  actions={
+                    <DialogClose asChild>
+                      <Button variant="outline">Fermer</Button>
+                    </DialogClose>
+                  }
+                />
               </div>
-            )}
-          </div>
+              {/* Autres infos détaillées ou actions complémentaires ici si besoin */}
+            </>
+          )}
         </DialogContent>
       </Dialog>
 

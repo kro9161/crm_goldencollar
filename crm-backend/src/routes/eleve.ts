@@ -205,17 +205,37 @@ router.get("/", async (req, res) => {
         deletedAt: null,
         role: "eleve"
       } as any,
-      include: {
+      select: {
         student: {
-          include: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            dateOfBirth: true,
+            phone: true,
+            address: true,
+            gender: true,
+            nationality: true,
+            status: true,
+            registrationDate: true,
+            studentNumber: true,
+            photoUrl: true,
+            scholarship: true,
+            handicap: true,
+           
+           
             subGroups: {
               where: { deletedAt: null },
-              include: {
+              select: {
+                id: true,
+                code: true,
                 group: true,
-                subGroupFilieres: { include: { filiere: true } },
+                subGroupFilieres: { select: { filiere: true } },
               },
             },
             filieres: true,
+            deletedAt: true,
           },
         },
       },
@@ -230,6 +250,7 @@ router.get("/", async (req, res) => {
         email: u.email,
         firstName: u.firstName,
         lastName: u.lastName,
+        // Champs scalaires additionnels
         dateOfBirth: u.dateOfBirth,
         phone: u.phone,
         address: u.address,
@@ -241,6 +262,7 @@ router.get("/", async (req, res) => {
         photoUrl: u.photoUrl,
         scholarship: u.scholarship,
         handicap: u.handicap,
+      
         subGroups: u.subGroups,
         filieres: u.filieres,
         // Pour compatibilité ancienne UI
@@ -343,7 +365,7 @@ router.post("/", async (req, res) => {
       });
 
       return user;
-    });
+    }, { timeout: 15000 }); // ⏳ Timeout augmenté à 15 secondes
 
     res.status(201).json({
       message: "Élève créé",

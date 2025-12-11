@@ -55,7 +55,7 @@ app.use(
 // Relaxe le rate limit pour le dev (éviter les 429 sur les rafraîchissements)
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 1000 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(morgan('dev'));
 
 // Test API
