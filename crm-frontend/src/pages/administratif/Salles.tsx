@@ -1,4 +1,8 @@
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useState, useEffect, useCallback } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useArchivedYear } from "../../hooks/useArchivedYear";
 
 type Room = {
@@ -8,16 +12,15 @@ type Room = {
   building?: string | null;
 };
 
-
 export default function Salles() {
   const { isReadOnly } = useArchivedYear();
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [form, setForm] = useState({ name: "", capacity: "", building: "" });
+  const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: "", capacity: "", building: "" });
   const [error, setError] = useState("");
   const token = localStorage.getItem("token");
 
-  // 🧠 fetchRooms avec useCallback (corrige le warning ESLint)
   const fetchRooms = useCallback(async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/rooms`, {
@@ -30,27 +33,38 @@ export default function Salles() {
     }
   }, [token]);
 
-  // 🔄 Chargement initial
   useEffect(() => {
     fetchRooms();
   }, [fetchRooms]);
 
-  // 🧾 Création / modification
+  const openCreate = () => {
+    setEditingId(null);
+    setForm({ name: "", capacity: "", building: "" });
+    setShowForm(true);
+  };
+
+  const openEdit = (r: Room) => {
+    setEditingId(r.id);
+    setForm({
+      name: r.name,
+      capacity: r.capacity?.toString() || "",
+      building: r.building || "",
+    });
+    setShowForm(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
     const method = editingId ? "PATCH" : "POST";
     const url = editingId
       ? `${import.meta.env.VITE_API_URL}/rooms/${editingId}`
       : `${import.meta.env.VITE_API_URL}/rooms`;
-
     const body = {
       name: form.name.trim(),
       capacity: form.capacity ? Number(form.capacity) : null,
       building: form.building.trim() || null,
     };
-
     try {
       const res = await fetch(url, {
         method,
@@ -60,18 +74,16 @@ export default function Salles() {
         },
         body: JSON.stringify(body),
       });
-
       if (!res.ok) throw new Error("Erreur lors de l’enregistrement");
-
       setForm({ name: "", capacity: "", building: "" });
       setEditingId(null);
+      setShowForm(false);
       fetchRooms();
     } catch (e) {
       setError((e as Error).message);
     }
   };
 
-  // ❌ Suppression
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer cette salle ?")) return;
     try {
@@ -85,108 +97,87 @@ export default function Salles() {
     }
   };
 
-  // ✏️ Édition
-  const handleEdit = (r: Room) => {
-    setEditingId(r.id);
-    setForm({
-      name: r.name,
-      capacity: r.capacity?.toString() || "",
-      building: r.building || "",
-    });
-  };
-
   return (
-    <div style={{ padding: "2rem" }}>
-      <h2>🏫 Gestion des salles</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
+    <div className="p-6 max-w-3xl mx-auto">
+      <h2 className="text-3xl font-bold mb-6">🏫 Gestion des salles</h2>
+      {error && <div className="text-red-600 font-medium mb-4">{error}</div>}
       {isReadOnly && (
-        <div style={{ 
-          background: "#d1ecf1", 
-          border: "1px solid #bee5eb", 
-          padding: 16, 
-          borderRadius: 8, 
-          marginBottom: 20 
-        }}>
-          <p style={{ margin: 0, color: "#0c5460" }}>
-            📂 Mode consultation - Année archivée
-          </p>
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded mb-4 text-blue-900">
+          📂 Mode consultation - Année archivée
         </div>
       )}
-
-      {/* 🧩 Formulaire */}
       {!isReadOnly && (
-        <form
-          onSubmit={handleSubmit}
-          style={{ marginBottom: "1rem", display: "flex", gap: 10 }}
-        >
-          <input
-            placeholder="Nom"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-          />
-          <input
-            placeholder="Capacité"
-            type="number"
-            value={form.capacity}
-            onChange={(e) => setForm({ ...form, capacity: e.target.value })}
-          />
-          <input
-            placeholder="Bâtiment"
-            value={form.building}
-            onChange={(e) => setForm({ ...form, building: e.target.value })}
-          />
-          <button type="submit" style={{ background: "green", color: "white" }}>
-            {editingId ? "Enregistrer" : "Créer"}
-          </button>
-        </form>
+        <Button onClick={openCreate} className="mb-4 h-10 px-6 text-base font-semibold">
+          ➕ Nouvelle salle
+        </Button>
       )}
-
-      {/* 📋 Tableau */}
-      {rooms.length === 0 ? (
-        <p>Aucune salle enregistrée.</p>
-      ) : (
-        <div className="overflow-x-auto -mx-4 lg:mx-0">
-          <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden border-collapse">
-            <thead className="bg-gray-200 text-gray-800">
-              <tr>
-                <th className="px-4 py-3 text-left">Nom</th>
-                <th className="px-4 py-3 text-left hidden md:table-cell">Capacité</th>
-                <th className="px-4 py-3 text-left hidden lg:table-cell">Bâtiment</th>
-                <th className="px-4 py-3 text-center">Actions</th>
+      <div className="overflow-x-auto rounded-xl shadow border bg-white">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left font-semibold">Nom</th>
+              <th className="px-4 py-3 text-left font-semibold">Capacité</th>
+              <th className="px-4 py-3 text-left font-semibold">Bâtiment</th>
+              <th className="px-4 py-3 text-center font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rooms.length === 0 ? (
+              <tr><td colSpan={4} className="text-center py-6 text-gray-400">Aucune salle enregistrée.</td></tr>
+            ) : rooms.map((r) => (
+              <tr key={r.id} className="border-b hover:bg-gray-50 transition">
+                <td className="px-4 py-3 font-medium">{r.name}</td>
+                <td className="px-4 py-3">{r.capacity || "-"}</td>
+                <td className="px-4 py-3">{r.building || "-"}</td>
+                <td className="px-4 py-3">
+                  {!isReadOnly && (
+                    <div className="flex gap-2 justify-center">
+                      <Button variant="secondary" size="sm" onClick={() => openEdit(r)}>
+                        ✏️
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(r.id)}>
+                        🗑️
+                      </Button>
+                    </div>
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rooms.map((r) => (
-                <tr key={r.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3">{r.name}</td>
-                  <td className="px-4 py-3 hidden md:table-cell">{r.capacity || "-"}</td>
-                  <td className="px-4 py-3 hidden lg:table-cell">{r.building || "-"}</td>
-                  <td className="px-4 py-3">
-                    {!isReadOnly && (
-                      <div className="flex gap-2 justify-center">
-                        <button
-                          onClick={() => handleEdit(r)}
-                          className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm transition"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => handleDelete(r.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {/* MODAL FORMULAIRE SALLE */}
+      <Dialog open={showForm} onOpenChange={v => !v && setShowForm(false)}>
+        <DialogContent className="max-w-md w-full">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <DialogHeader>
+              <DialogTitle>{editingId ? "Modifier la salle" : "Créer une salle"}</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col">
+                <label htmlFor="name" className="text-xs font-medium mb-1">Nom</label>
+                <Input id="name" placeholder="Nom" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+              </div>
+              <div className="flex flex-col">
+                <label htmlFor="capacity" className="text-xs font-medium mb-1">Capacité</label>
+                <Input id="capacity" type="number" placeholder="Capacité" value={form.capacity} onChange={e => setForm({ ...form, capacity: e.target.value })} />
+              </div>
+              <div className="flex flex-col">
+                <label htmlFor="building" className="text-xs font-medium mb-1">Bâtiment</label>
+                <Input id="building" placeholder="Bâtiment" value={form.building} onChange={e => setForm({ ...form, building: e.target.value })} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
+                Enregistrer
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

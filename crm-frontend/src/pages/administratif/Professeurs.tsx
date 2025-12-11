@@ -157,7 +157,7 @@ export default function Professeurs() {
             </tr>
           </thead>
           <tbody>
-            {professeurs.map((p) => (
+            {(Array.isArray(professeurs) ? professeurs : []).map((p) => (
               <tr key={p.id} className="border-b hover:bg-gray-50 transition">
                 <td className="px-4 py-3 font-medium">{p.lastName}</td>
                 <td className="px-4 py-3">{p.firstName}</td>

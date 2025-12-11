@@ -445,116 +445,173 @@ export default function AcademicYears() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {years.map((year) => (
-            <Card key={year.id} className={year.isCurrent ? "border-blue-500 border-2" : ""}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{year.name}</CardTitle>
-                    <CardDescription className="capitalize mt-1">
-                      Session {year.session}
-                    </CardDescription>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    {year.isCurrent && (
-                      <Badge className="bg-blue-500">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        En cours
-                      </Badge>
-                    )}
-                    {year.isArchived && (
-                      <Badge variant="secondary">
-                        <Archive className="w-3 h-3 mr-1" />
-                        Archivée
-                      </Badge>
-                    )}
-                    {!year.isCurrent && !year.isArchived && new Date(year.endDate) < new Date() && (
-                      <Badge variant="outline" className="border-amber-300 text-amber-700">
-                        Terminée
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                <div className="text-sm text-gray-600 space-y-2 mb-4">
-                  <p>
-                    📅 {new Date(year.startDate).toLocaleDateString()} →{" "}
-                    {new Date(year.endDate).toLocaleDateString()}
-                  </p>
-                  {year._count && (
-                    <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t">
-                      <div>
-                        <div className="font-semibold">{year._count.groups}</div>
-                        <div className="text-xs text-gray-500">Groupes</div>
-                      </div>
-                      <div>
-                        <div className="font-semibold">{year._count.courses}</div>
-                        <div className="text-xs text-gray-500">Cours</div>
-                      </div>
-                      <div>
-                        <div className="font-semibold">{year._count.enrollments}</div>
-                        <div className="text-xs text-gray-500">Inscrits</div>
-                      </div>
+        <>
+          {/* Années en cours et non archivées */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {years.filter((year) => !year.isArchived).map((year) => (
+              <Card key={year.id} className={year.isCurrent ? "border-blue-500 border-2" : ""}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{year.name}</CardTitle>
+                      <CardDescription className="capitalize mt-1">
+                        Session {year.session}
+                      </CardDescription>
                     </div>
-                  )}
-                </div>
+                    <div className="flex flex-col gap-1">
+                      {year.isCurrent && (
+                        <Badge className="bg-blue-500">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          En cours
+                        </Badge>
+                      )}
+                      {!year.isCurrent && !year.isArchived && new Date(year.endDate) < new Date() && (
+                        <Badge variant="outline" className="border-amber-300 text-amber-700">
+                          Terminée
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
 
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="default" onClick={() => fetchYearDetails(year.id)}>
-                    👁️ Voir détails
-                  </Button>
+                <CardContent>
+                  <div className="text-sm text-gray-600 space-y-2 mb-4">
+                    <p>
+                      📅 {new Date(year.startDate).toLocaleDateString()} →{" "}
+                      {new Date(year.endDate).toLocaleDateString()}
+                    </p>
+                    {year._count && (
+                      <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t">
+                        <div>
+                          <div className="font-semibold">{year._count.groups}</div>
+                          <div className="text-xs text-gray-500">Groupes</div>
+                        </div>
+                        <div>
+                          <div className="font-semibold">{year._count.courses}</div>
+                          <div className="text-xs text-gray-500">Cours</div>
+                        </div>
+                        <div>
+                          <div className="font-semibold">{year._count.enrollments}</div>
+                          <div className="text-xs text-gray-500">Inscrits</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                  {year.isArchived && (
-                    <Button size="sm" variant="secondary" onClick={() => enterArchivedMode(year)}>
-                      📂 Consulter
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="default" onClick={() => fetchYearDetails(year.id)}>
+                      👁️ Voir détails
                     </Button>
-                  )}
 
-                  {!year.isCurrent && !year.isArchived && (
-                    <Button size="sm" variant="outline" onClick={() => handleSetCurrent(year.id)}>
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Activer
-                    </Button>
-                  )}
+                    {!year.isCurrent && (
+                      <Button size="sm" variant="outline" onClick={() => handleSetCurrent(year.id)}>
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Activer
+                      </Button>
+                    )}
 
-                  {!year.isArchived && !year.isCurrent && (
-                    <Button size="sm" variant="outline" onClick={() => handleArchive(year.id)}>
-                      <Archive className="w-3 h-3 mr-1" />
-                      Archiver
-                    </Button>
-                  )}
+                    {!year.isArchived && !year.isCurrent && (
+                      <Button size="sm" variant="outline" onClick={() => handleArchive(year.id)}>
+                        <Archive className="w-3 h-3 mr-1" />
+                        Archiver
+                      </Button>
+                    )}
 
-                  {!year.isArchived && year.isCurrent && (
-                    <Button size="sm" variant="destructive" onClick={() => handleArchive(year.id, true)}>
-                      <Archive className="w-3 h-3 mr-1" />
-                      Archiver (forcer)
-                    </Button>
-                  )}
+                    {!year.isArchived && year.isCurrent && (
+                      <Button size="sm" variant="destructive" onClick={() => handleArchive(year.id, true)}>
+                        <Archive className="w-3 h-3 mr-1" />
+                        Archiver (forcer)
+                      </Button>
+                    )}
 
-                  {year.isArchived && (
-                    <Button size="sm" variant="outline" onClick={() => handleUnarchive(year.id)}>
-                      Désarchiver
-                    </Button>
-                  )}
+                    {!year.isCurrent && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(year.id)}
+                      >
+                        <XCircle className="w-3 h-3 mr-1" />
+                        Supprimer
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-                  {!year.isCurrent && (
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDelete(year.id)}
-                    >
-                      <XCircle className="w-3 h-3 mr-1" />
-                      Supprimer
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+          {/* Années archivées */}
+          {showArchived && years.some((year) => year.isArchived) && (
+            <>
+              <h2 className="text-xl font-bold mt-10 mb-4">Années archivées</h2>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {years.filter((year) => year.isArchived).map((year) => (
+                  <Card key={year.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">{year.name}</CardTitle>
+                          <CardDescription className="capitalize mt-1">
+                            Session {year.session}
+                          </CardDescription>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="secondary">
+                            <Archive className="w-3 h-3 mr-1" />
+                            Archivée
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-sm text-gray-600 space-y-2 mb-4">
+                        <p>
+                          📅 {new Date(year.startDate).toLocaleDateString()} →{" "}
+                          {new Date(year.endDate).toLocaleDateString()}
+                        </p>
+                        {year._count && (
+                          <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t">
+                            <div>
+                              <div className="font-semibold">{year._count.groups}</div>
+                              <div className="text-xs text-gray-500">Groupes</div>
+                            </div>
+                            <div>
+                              <div className="font-semibold">{year._count.courses}</div>
+                              <div className="text-xs text-gray-500">Cours</div>
+                            </div>
+                            <div>
+                              <div className="font-semibold">{year._count.enrollments}</div>
+                              <div className="text-xs text-gray-500">Inscrits</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="default" onClick={() => fetchYearDetails(year.id)}>
+                          👁️ Voir détails
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => enterArchivedMode(year)}>
+                          📂 Consulter
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleUnarchive(year.id)}>
+                          Désarchiver
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(year.id)}
+                        >
+                          <XCircle className="w-3 h-3 mr-1" />
+                          Supprimer
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+        </>
       )}
 
       {/* Modal détails année */}
