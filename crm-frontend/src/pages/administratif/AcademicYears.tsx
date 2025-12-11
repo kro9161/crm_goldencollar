@@ -309,21 +309,21 @@ export default function AcademicYears() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Années Académiques</h1>
-          <p className="text-gray-600 mt-1">Gestion des années scolaires et sessions</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Années Académiques</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Gestion des années scolaires et sessions</p>
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <PlusCircle className="w-4 h-4 mr-2" />
               Nouvelle Année
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="w-full max-w-lg mx-auto">
             <DialogHeader>
               <DialogTitle>Créer une année académique</DialogTitle>
               <DialogDescription>
@@ -339,7 +339,7 @@ export default function AcademicYears() {
                   placeholder="2025-2026 Octobre"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-3 py-2 border rounded-md text-sm"
                   required
                 />
               </div>
@@ -349,21 +349,21 @@ export default function AcademicYears() {
                 <select
                   value={formData.session}
                   onChange={(e) => setFormData({ ...formData, session: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-3 py-2 border rounded-md text-sm"
                 >
                   <option value="octobre">Octobre</option>
                   <option value="fevrier">Février</option>
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Date début</label>
                   <input
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md"
+                    className="w-full px-3 py-2 border rounded-md text-sm"
                     required
                   />
                 </div>
@@ -374,30 +374,30 @@ export default function AcademicYears() {
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md"
+                    className="w-full px-3 py-2 border rounded-md text-sm"
                     required
                   />
                 </div>
               </div>
 
-              <div className="flex items-center">
+              <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id="isCurrent"
                   checked={formData.isCurrent}
                   onChange={(e) => setFormData({ ...formData, isCurrent: e.target.checked })}
-                  className="w-4 h-4 mr-2"
+                  className="w-4 h-4"
                 />
                 <label htmlFor="isCurrent" className="text-sm">
                   Définir comme année en cours
                 </label>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="w-full sm:w-auto">
                   Annuler
                 </Button>
-                <Button type="submit">Créer</Button>
+                <Button type="submit" className="w-full sm:w-auto">Créer</Button>
               </div>
             </form>
           </DialogContent>

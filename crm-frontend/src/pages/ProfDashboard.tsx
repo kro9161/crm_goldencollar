@@ -186,19 +186,19 @@ useEffect(() => {
   /* ------------------- RENDER ------------------- */
 
   return (
-    <div className="p-8 min-h-screen bg-gray-50">
+    <div className="p-2 sm:p-6 min-h-screen bg-gray-50">
       {/* HEADER */}
-      <header className="flex justify-between items-center mb-8">
+      <header className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">👋 Bonjour Professeur</h1>
-          <p className="text-gray-500">Votre espace enseignant</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">👋 Bonjour Professeur</h1>
+          <p className="text-gray-500 text-sm sm:text-base">Votre espace enseignant</p>
         </div>
 
         <a
           href="https://votre-moodle.fr"
           target="_blank"
           rel="noreferrer"
-          className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 w-full sm:w-auto justify-center"
         >
           <BookOpen className="w-5 h-5" />
           Accéder à Moodle
@@ -206,7 +206,7 @@ useEffect(() => {
       </header>
 
       {/* TABS */}
-      <div className="flex gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-6">
         {[
           { id: "planning", label: "📅 Planning", icon: Calendar },
           { id: "appel", label: "📋 Appel", icon: CheckSquare },
@@ -215,7 +215,7 @@ useEffect(() => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition font-medium ${
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition font-medium w-full sm:w-auto justify-center ${
               activeTab === tab.id
                 ? "bg-blue-600 text-white shadow"
                 : "bg-white border hover:bg-gray-100"
@@ -227,65 +227,64 @@ useEffect(() => {
       </div>
 
       {/* CONTENT */}
-      <div className="bg-white rounded-2xl shadow p-6">
+      <div className="bg-white rounded-2xl shadow p-2 sm:p-6 overflow-x-auto">
 
         {/* --- PLANNING --- */}
         {activeTab === "planning" && (
-          <FullCalendar
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="timeGridWeek"
-            locale={frLocale}
-            height="80vh"
-            events={events}
-            editable={false}
-            selectable={false}
-            allDaySlot={false}
-            weekends={false}
-            slotMinTime="08:00:00"
-            slotMaxTime="19:00:00"
-            headerToolbar={{
-              left: "prev,next today",
-              center: "title",
-              right: "timeGridWeek,dayGridMonth",
-            }}
-eventClick={(info) => {
-  const sessionId = info.event.id;
-  
-  console.log("🖱️ Clic sur session:", sessionId);
-  
-  if (!sessionId) {
-    alert("Session introuvable");
-    return;
-  }
-
-  setSelectedSessionId(sessionId);
-}}
-
-
-
-          />
+          <div className="min-w-[320px]">
+            <FullCalendar
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView="timeGridWeek"
+              locale={frLocale}
+              height="70vh"
+              events={events}
+              editable={false}
+              selectable={false}
+              allDaySlot={false}
+              weekends={false}
+              slotMinTime="08:00:00"
+              slotMaxTime="19:00:00"
+              headerToolbar={{
+                left: "prev,next today",
+                center: "title",
+                right: "timeGridWeek,dayGridMonth",
+              }}
+              eventClick={(info) => {
+                const sessionId = info.event.id;
+                if (!sessionId) {
+                  alert("Session introuvable");
+                  return;
+                }
+                setSelectedSessionId(sessionId);
+              }}
+            />
+          </div>
         )}
 
         {/* --- APPEL --- */}
         {activeTab === "appel" && (
-          <AppelView
-            selectedSessionId={selectedSessionId}
-            students={students}
-            presence={presence}
-            togglePresence={togglePresence}
-            saveAttendance={saveAttendance}
-          />
+          <div className="overflow-x-auto">
+            <AppelView
+              selectedSessionId={selectedSessionId}
+              students={students}
+              presence={presence}
+              togglePresence={togglePresence}
+              saveAttendance={saveAttendance}
+            />
+          </div>
         )}
 
         {/* --- NOTES --- */}
         {activeTab === "notes" && (
-          <NotesView
-            selectedSessionId={selectedSessionId}
-            students={students}
-            notes={notes}
-            setNotes={setNotes}
-            saveNotes={saveNotes}
-          />
+          <div className="overflow-x-auto">
+            <NotesView
+              selectedSessionId={selectedSessionId}
+              students={students}
+              notes={notes}
+              setNotes={setNotes}
+              saveNotes={saveNotes}
+            />
+          </div>
         )}
 
       </div>
