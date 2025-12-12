@@ -2,44 +2,53 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
 /**
- * 🔐 Type de requête enrichi avec l'utilisateur JWT et les champs standards
+ * Rôles autorisés dans l'application
+ */
+export type UserRole = "admin" | "administratif" | "prof" | "eleve";
+
+/**
+ * Requête Express enrichie avec l'utilisateur authentifié
  */
 export type AuthedRequest = Request & {
   user?: {
     id: string;
-    role: string;
+    role: UserRole;
     email: string;
   };
-  body: any;
-  params: Record<string, string>;
-  query: Record<string, any>;
 };
 
 /**
- * 🧱 Middleware d’authentification JWT
- * Vérifie la présence et la validité du token et ajoute `req.user`
+ * 🔐 Middleware d’authentification JWT
  */
-export function authRequired(req: AuthedRequest, res: Response, next: NextFunction) {
-  try {
-    const header = req.headers["authorization"] || "";
-    const token =
-      typeof header === "string" && header.startsWith("Bearer ")
-        ? header.slice(7)
-        : null;
+export function authRequired(
+  req: AuthedRequest,
+  res: Response,
+  next: NextFunction
+) {
+  const header = req.headers.authorization;
 
-    if (!token) {
-      return res.status(401).json({ error: "Unauthorized: missing token" });
+  if (!header || !header.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized: missing token" });
+  }
+
+  const token = header.slice(7);
+
+  try {
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET is not defined");
     }
 
-    // Vérifie le JWT
-    const payload = jwt.verify(token, process.env.JWT_SECRET || "default_secret") as {
+    const payload = jwt.verify(token, process.env.JWT_SECRET) as {
       id: string;
-      role: string;
+      role: UserRole;
       email: string;
     };
 
-    // Attache les infos utilisateur à la requête
-    req.user = { id: payload.id, role: payload.role, email: payload.email };
+    req.user = {
+      id: payload.id,
+      role: payload.role,
+      email: payload.email,
+    };
 
     next();
   } catch (err) {
@@ -49,17 +58,13 @@ export function authRequired(req: AuthedRequest, res: Response, next: NextFuncti
 }
 
 /**
- * 🧠 Middleware de rôle
- * Vérifie si l'utilisateur connecté a un des rôles autorisés
+ * 🧠 Middleware de contrôle des rôles
  */
-export function requireRole(...roles: string[]) {
+export function requireRole(...roles: UserRole[]) {
   return (req: AuthedRequest, res: Response, next: NextFunction) => {
-    const userRole = req.user?.role;
-
-    if (!userRole || !roles.includes(userRole)) {
+    if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({ error: "Forbidden: insufficient rights" });
     }
-
     next();
   };
 }

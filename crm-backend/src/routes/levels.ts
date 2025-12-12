@@ -1,54 +1,55 @@
-import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { authRequired, requireRole } from '../middlewares/auth.js';
+import { Router } from "express";
+import { PrismaClient } from "@prisma/client";
+import { authRequired, requireRole } from "../middlewares/auth.js";
 
 const prisma = new PrismaClient();
 const router = Router();
 
-// 🔒 Tous les endpoints nécessitent l'auth et le rôle administratif
+/* ===================================================
+   Sécurité
+=================================================== */
 router.use(authRequired);
-router.use(requireRole('admin', 'administratif'));
+router.use(requireRole("admin", "administratif"));
 
-/**
- * 📋 GET /levels
- * Récupère tous les niveaux (BAC+1 à BAC+5) disponibles
- */
-router.get('/', async (req, res) => {
+/* ===================================================
+   GET /levels
+   Liste des niveaux (BAC+1 → BAC+5)
+=================================================== */
+router.get("/", async (_req, res) => {
   try {
     const levels = await prisma.level.findMany({
       where: { deletedAt: null },
+      orderBy: { code: "asc" },
       include: {
         _count: {
           select: { filieres: true },
         },
       },
-      orderBy: { code: 'asc' },
     });
 
     res.json(levels);
   } catch (err) {
-    console.error('❌ Erreur GET /levels:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error("❌ GET /levels", err);
+    res.status(500).json({ error: "Erreur chargement niveaux" });
   }
 });
 
-/**
- * ➕ POST /levels
- * Crée un nouveau niveau (BAC+1, BAC+2, etc.)
- * Body: { code: "BAC+1"|"BAC+2"|..., label?: string }
- */
-router.post('/', async (req, res) => {
+/* ===================================================
+   POST /levels
+   Créer un niveau (BAC+1, BAC+2…)
+=================================================== */
+router.post("/", async (req, res) => {
   try {
     const { code, label } = req.body;
 
-    if (!code) {
-      return res.status(400).json({ error: 'code est requis' });
+    if (!code || typeof code !== "string") {
+      return res.status(400).json({ error: "code requis" });
     }
 
     const level = await prisma.level.create({
       data: {
-        code: code.toUpperCase(),
-        label: label || null,
+        code: code.toUpperCase().trim(),
+        label: label?.trim() || null,
       },
       include: {
         _count: {
@@ -59,31 +60,31 @@ router.post('/', async (req, res) => {
 
     res.status(201).json(level);
   } catch (err: any) {
-    if (err.code === 'P2002') {
-      // Unique constraint violation
-      return res
-        .status(400)
-        .json({ error: 'Ce code de niveau existe déjà' });
+    if (err.code === "P2002") {
+      return res.status(400).json({
+        error: "Ce niveau existe déjà",
+      });
     }
-    console.error('❌ Erreur POST /levels:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+
+    console.error("❌ POST /levels", err);
+    res.status(500).json({ error: "Erreur création niveau" });
   }
 });
 
-/**
- * ✏️ PATCH /levels/:id
- * Modifie un niveau
- */
-router.patch('/:id', async (req, res) => {
+/* ===================================================
+   PATCH /levels/:id
+   Modifier un niveau
+=================================================== */
+router.patch("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { code, label } = req.body;
 
-    const level = await prisma.level.update({
+    const updated = await prisma.level.update({
       where: { id },
       data: {
-        ...(code && { code: code.toUpperCase() }),
-        ...(label !== undefined && { label: label || null }),
+        ...(code && { code: code.toUpperCase().trim() }),
+        ...(label !== undefined && { label: label?.trim() || null }),
       },
       include: {
         _count: {
@@ -92,43 +93,44 @@ router.patch('/:id', async (req, res) => {
       },
     });
 
-    res.json(level);
+    res.json(updated);
   } catch (err: any) {
-    if (err.code === 'P2025') {
-      return res.status(404).json({ error: 'Niveau non trouvé' });
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Niveau introuvable" });
     }
-    if (err.code === 'P2002') {
-      return res
-        .status(400)
-        .json({ error: 'Ce code de niveau existe déjà' });
+    if (err.code === "P2002") {
+      return res.status(400).json({
+        error: "Ce code de niveau existe déjà",
+      });
     }
-    console.error('❌ Erreur PATCH /levels/:id:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+
+    console.error("❌ PATCH /levels/:id", err);
+    res.status(500).json({ error: "Erreur modification niveau" });
   }
 });
 
-/**
- * 🗑️ DELETE /levels/:id
- * Supprime un niveau (soft delete)
- */
-router.delete('/:id', async (req, res) => {
+/* ===================================================
+   DELETE /levels/:id
+   Soft delete
+=================================================== */
+router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    const level = await prisma.level.update({
+    await prisma.level.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
 
-    res.json({ success: true, id: level.id });
+    res.json({ ok: true, id });
   } catch (err: any) {
-    if (err.code === 'P2025') {
-      return res.status(404).json({ error: 'Niveau non trouvé' });
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Niveau introuvable" });
     }
-    console.error('❌ Erreur DELETE /levels/:id:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+
+    console.error("❌ DELETE /levels/:id", err);
+    res.status(500).json({ error: "Erreur suppression niveau" });
   }
 });
 
 export default router;
-

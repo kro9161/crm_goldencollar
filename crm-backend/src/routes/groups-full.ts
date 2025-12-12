@@ -23,7 +23,7 @@ router.get("/full", async (_req, res) => {
       include: {
         subGroups: {
           include: {
-            students: true, // on récupère les élèves
+            students: { select: { id: true } }, // on ne récupère que l'id pour compter
           },
           orderBy: { code: "asc" }
         },

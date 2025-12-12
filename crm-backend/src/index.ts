@@ -28,6 +28,8 @@ import subGroupsRouter from "./routes/subgroups.js";
 import academicYearsRouter from "./routes/academicYears.js";
 import filieresRouter from "./routes/filieres.js";
 import levelsRouter from "./routes/levels.js";
+import elevesPlanningRoutes from "./routes/elevesPlanning.js";
+
 
 
 const prisma = new PrismaClient();
@@ -74,7 +76,7 @@ app.use('/courses', coursesRouter);
 app.use('/absences', absencesRouter);
 app.use('/import', importExportRouter);
 app.use('/admin', adminRouter);
-app.use('/rooms', authRequired, roomsRouter);
+app.use('/rooms',  roomsRouter);
 app.use("/planning", planningRouter);
 app.use("/prof", profRouter);
 app.use("/eleves", eleveRoutes);
@@ -86,6 +88,9 @@ app.use("/subgroups", subGroupsRouter);
 app.use("/academic-years", academicYearsRouter);
 app.use("/filieres", filieresRouter);
 app.use("/levels", levelsRouter);
+app.use("/eleves-planning", elevesPlanningRoutes);
+
+
 
 
 // Création automatique de l'admin si absent

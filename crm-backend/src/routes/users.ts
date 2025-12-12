@@ -1,142 +1,164 @@
+// crm-backend/src/routes/users.ts
 import { Router } from "express";
-import { PrismaClient, Prisma } from "@prisma/client";
-import { authRequired, requireRole, AuthedRequest } from "../middlewares/auth.js";
+import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { authRequired, requireRole, AuthedRequest } from "../middlewares/auth.js";
 
 const prisma = new PrismaClient();
 const router = Router();
 
+// 🔐 Sécurité globale
 router.use(authRequired);
 router.use(requireRole("admin", "administratif"));
 
-// 1) GET USERS
+/* ============================================================
+   GET /users
+   - Liste les utilisateurs inscrits sur une année académique
+   - Filtres : role, search, email, prénom, nom
+============================================================ */
 router.get("/", async (req, res) => {
-  const role = (req.query.role as string) || undefined;
-  const academicYearId = (req.query.academicYearId as string) || undefined;
-
   try {
-    // Si pas d'année spécifiée, récupérer l'année courante
-    let targetYearId = academicYearId;
-    if (!targetYearId) {
+    const {
+      role,
+      academicYearId,
+      search,
+      email,
+      firstName,
+      lastName,
+    } = req.query as Record<string, string | undefined>;
+
+    // 🎓 Année cible
+    let yearId = academicYearId;
+    if (!yearId) {
       const currentYear = await prisma.academicYear.findFirst({
-        where: { isCurrent: true, isArchived: false, deletedAt: null }
+        where: { isCurrent: true, isArchived: false, deletedAt: null },
+        select: { id: true },
       });
       if (!currentYear) {
-        return res.status(400).json({ error: "Aucune année académique courante trouvée." });
+        return res.status(400).json({ error: "Aucune année académique courante" });
       }
-      targetYearId = currentYear.id;
+      yearId = currentYear.id;
     }
 
-    // 🔥 NOUVEAU: Filtrer via StudentEnrollment
-    let enrollmentWhere: any = {
-      academicYearId: targetYearId,
-      deletedAt: null
+    // 🔍 Filtre enrollment
+    const enrollmentWhere: any = {
+      academicYearId: yearId,
+      deletedAt: null,
+      ...(role && { role }),
     };
 
-    if (role) {
-      enrollmentWhere.role = role;
+    // 🔍 Filtres utilisateur
+    if (search || email || firstName || lastName) {
+      enrollmentWhere.student = {
+        AND: [
+          ...(search
+            ? [{
+                OR: [
+                  { email: { contains: search, mode: "insensitive" } },
+                  { firstName: { contains: search, mode: "insensitive" } },
+                  { lastName: { contains: search, mode: "insensitive" } },
+                ],
+              }]
+            : []),
+          ...(email ? [{ email: { contains: email, mode: "insensitive" } }] : []),
+          ...(firstName ? [{ firstName: { contains: firstName, mode: "insensitive" } }] : []),
+          ...(lastName ? [{ lastName: { contains: lastName, mode: "insensitive" } }] : []),
+        ],
+      };
     }
 
     const enrollments = await prisma.studentEnrollment.findMany({
       where: enrollmentWhere,
       orderBy: { createdAt: "asc" },
-      include: {
+      select: {
         student: {
-          include: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            photoUrl: true,
+            phone: true,
+            address: true,
+            nationality: true,
+            status: true,
+            studentNumber: true,
+            scholarship: true,
+            handicap: true,
             subGroups: {
               where: { deletedAt: null },
-              include: { 
-                group: true
-              },
-            },
-            courses: role === "prof" ? {
-              where: { 
-                deletedAt: null,
-                academicYearId: targetYearId
-              },
               select: {
                 id: true,
-                name: true,
-              }
-            } : false,
-          }
-        }
-      }
+                code: true,
+                group: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
+      },
     });
 
-    // Extraire les users depuis les enrollments
     const users = enrollments.map(e => e.student);
-
     res.json(users);
-  } catch (e) {
-    console.error("Erreur /users GET:", e);
-    res.status(500).json({ error: "Erreur lors du chargement des utilisateurs." });
+  } catch (err) {
+    console.error("❌ GET /users :", err);
+    res.status(500).json({ error: "Erreur chargement utilisateurs" });
   }
 });
 
-// 2) CREATE USER
+/* ============================================================
+   POST /users
+   - Crée un utilisateur
+   - L’inscrit sur une année académique
+============================================================ */
 router.post("/", async (req: AuthedRequest, res) => {
-  const {
-    email,
-    firstName,
-    lastName,
-    role,
-    subGroupCodes,
-    academicYearId,
-    phone,
-    address,
-    photoUrl,
-    dateOfBirth,
-    nationality,
-    status,
-    teacherNumber,
-    specialty,
-    hireDate
-  } = req.body;
-
-  if (!email || !firstName || !lastName || !role) {
-    return res.status(400).json({ error: "Champs obligatoires manquants." });
-  }
-
-  const tmpPass = "Ecole123!";
-
   try {
-    // 1) Trouver l'année cible (paramètre ou année courante)
-    let targetYearId = academicYearId as string | undefined;
-    if (!targetYearId) {
+    const {
+      email,
+      firstName,
+      lastName,
+      role,
+      academicYearId,
+      subGroupCodes,
+      phone,
+      address,
+      photoUrl,
+      dateOfBirth,
+      nationality,
+      status,
+      teacherNumber,
+      specialty,
+      hireDate,
+    } = req.body;
+
+    if (!email || !firstName || !lastName || !role) {
+      return res.status(400).json({ error: "Champs obligatoires manquants" });
+    }
+
+    // 🎓 Année cible
+    let yearId = academicYearId;
+    if (!yearId) {
       const currentYear = await prisma.academicYear.findFirst({
         where: { isCurrent: true, isArchived: false, deletedAt: null },
         select: { id: true },
       });
-
       if (!currentYear) {
         return res.status(400).json({ error: "Aucune année académique courante" });
       }
-      targetYearId = currentYear.id;
+      yearId = currentYear.id;
     }
 
-    // Vérifier que l'année existe vraiment
-    const yearExists = await prisma.academicYear.findUnique({
-      where: { id: targetYearId },
-      select: { id: true },
-    });
+    const tempPassword = "Ecole123!";
 
-    if (!yearExists) {
-      console.error("❌ Année académique introuvable:", targetYearId);
-      return res.status(400).json({ error: "Année académique invalide ou supprimée" });
-    }
-
-    console.log("✅ Création user sur année:", targetYearId);
-
-    // 2) Créer l'utilisateur + inscription à l'année (StudentEnrollment)
-    const result = await prisma.$transaction(async (tx) => {
-      const createdUser = await tx.user.create({
+    const createdUser = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
         data: {
           email: email.trim(),
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           role,
-          password: bcrypt.hashSync(tmpPass, 10),
+          password: bcrypt.hashSync(tempPassword, 10),
           phone: phone || null,
           address: address || null,
           photoUrl: photoUrl || null,
@@ -150,77 +172,77 @@ router.post("/", async (req: AuthedRequest, res) => {
             ? { connect: subGroupCodes.map((code: string) => ({ code })) }
             : undefined,
         },
-        include: {
-          subGroups: { include: { group: true } },
-        },
       });
 
       await tx.studentEnrollment.create({
         data: {
-          studentId: createdUser.id,
-          academicYearId: targetYearId!,
-          role: role || "eleve",
+          studentId: user.id,
+          academicYearId: yearId!,
+          role,
         },
       });
 
-      return createdUser;
+      return user;
     });
 
     res.status(201).json({
-      user: result,
-      temporaryPassword: tmpPass,
+      user: createdUser,
+      temporaryPassword: tempPassword,
     });
-  } catch (e) {
-    console.error("Erreur /users POST:", e);
-    res.status(500).json({ error: "Erreur lors de la création." });
+  } catch (err) {
+    console.error("❌ POST /users :", err);
+    res.status(500).json({ error: "Erreur création utilisateur" });
   }
 });
 
-// 3) UPDATE USER
+/* ============================================================
+   PATCH /users/:id
+============================================================ */
 router.patch("/:id", async (req, res) => {
-  const { id } = req.params;
-  const {
-    email,
-    firstName,
-    lastName,
-    role,
-    subGroupCodes,
-    phone,
-    address,
-    photoUrl,
-    dateOfBirth,
-    nationality,
-    status,
-    teacherNumber,
-    specialty,
-    hireDate
-  } = req.body;
-
   try {
+    const {
+      email,
+      firstName,
+      lastName,
+      role,
+      subGroupCodes,
+      phone,
+      address,
+      photoUrl,
+      dateOfBirth,
+      nationality,
+      status,
+      teacherNumber,
+      specialty,
+      hireDate,
+    } = req.body;
+
     const updated = await prisma.user.update({
-      where: { id },
+      where: { id: req.params.id },
       data: {
-        ...(email ? { email: email.trim() } : {}),
-        ...(firstName ? { firstName: firstName.trim() } : {}),
-        ...(lastName ? { lastName: lastName.trim() } : {}),
-        ...(role ? { role } : {}),
-        ...(phone !== undefined ? { phone } : {}),
-        ...(address !== undefined ? { address } : {}),
-        ...(photoUrl !== undefined ? { photoUrl } : {}),
-        ...(dateOfBirth !== undefined ? { dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null } : {}),
-        ...(nationality !== undefined ? { nationality } : {}),
-        ...(status !== undefined ? { status } : {}),
-        ...(teacherNumber !== undefined ? { teacherNumber } : {}),
-        ...(specialty !== undefined ? { specialty } : {}),
-        ...(hireDate !== undefined ? { hireDate: hireDate ? new Date(hireDate) : null } : {}),
-        ...(subGroupCodes
-          ? {
-              subGroups: {
-                set: [],
-                connect: subGroupCodes.map((code: string) => ({ code })),
-              },
-            }
-          : {}),
+        ...(email && { email: email.trim() }),
+        ...(firstName && { firstName: firstName.trim() }),
+        ...(lastName && { lastName: lastName.trim() }),
+        ...(role && { role }),
+        ...(phone !== undefined && { phone }),
+        ...(address !== undefined && { address }),
+        ...(photoUrl !== undefined && { photoUrl }),
+        ...(dateOfBirth !== undefined && {
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+        }),
+        ...(nationality !== undefined && { nationality }),
+        ...(status !== undefined && { status }),
+        ...(teacherNumber !== undefined && { teacherNumber }),
+        ...(specialty !== undefined && { specialty }),
+        ...(hireDate !== undefined && {
+          hireDate: hireDate ? new Date(hireDate) : null,
+        }),
+        ...(subGroupCodes && {
+          subGroups: {
+            set: [],
+            connect: subGroupCodes.map((code: string) => ({ code })),
+          },
+        }),
       },
       include: {
         subGroups: { include: { group: true } },
@@ -228,20 +250,23 @@ router.patch("/:id", async (req, res) => {
     });
 
     res.json(updated);
-  } catch (e) {
-    console.error("Erreur /users PATCH:", e);
-    res.status(500).json({ error: "Erreur lors de la modification." });
+  } catch (err) {
+    console.error("❌ PATCH /users :", err);
+    res.status(500).json({ error: "Erreur mise à jour utilisateur" });
   }
 });
 
-// 4) DELETE USER
+/* ============================================================
+   DELETE /users/:id
+   ⚠️ volontairement HARD DELETE (à revoir plus tard)
+============================================================ */
 router.delete("/:id", async (req, res) => {
   try {
     await prisma.user.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
-  } catch (e) {
-    console.error("Erreur /users DELETE:", e);
-    res.status(500).json({ error: "Erreur lors de la suppression." });
+  } catch (err) {
+    console.error("❌ DELETE /users :", err);
+    res.status(500).json({ error: "Erreur suppression utilisateur" });
   }
 });
 

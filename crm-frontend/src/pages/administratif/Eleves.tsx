@@ -79,21 +79,35 @@ function Eleves() {
   const [subGroups, setSubGroups] = useState<SubGroup[]>([]);
     // Charger la liste des sous-groupes au chargement de la page
     const fetchSubGroups = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:4000/subgroups", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setSubGroups(data);
-        } else {
-          setSubGroups([]);
-        }
-      } catch {
-        setSubGroups([]);
-      }
-    };
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:4000/subgroups", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      setSubGroups([]);
+      return;
+    }
+
+    const data = await res.json();
+
+    if (Array.isArray(data)) {
+      setSubGroups(data);
+    } else if (Array.isArray(data?.data)) {
+      setSubGroups(data.data);
+    } else if (Array.isArray(data?.subGroups)) {
+      setSubGroups(data.subGroups);
+    } else {
+      console.error("Format inattendu /subgroups :", data);
+      setSubGroups([]);
+    }
+  } catch (err) {
+    console.error("Erreur fetchSubGroups", err);
+    setSubGroups([]);
+  }
+};
+
   // const [filieres] = useState<Filiere[]>([]); // plus utilisé, filtrage dynamique
   const [filteredFilieres, setFilteredFilieres] = useState<Filiere[]>([]);
     // Met à jour les filières affichées selon le sous-groupe sélectionné
@@ -158,21 +172,39 @@ function Eleves() {
 
   // Charger la liste des élèves au chargement de la page
   // Fonction pour charger les élèves (utilisable partout)
-  const fetchEleves = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:4000/eleves", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setEleves(data);
-    } catch {
+ const fetchEleves = async () => {
+  setLoading(true);
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:4000/eleves", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
       setEleves([]);
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+
+    const data = await res.json();
+
+    if (Array.isArray(data)) {
+      setEleves(data);
+    } else if (Array.isArray(data?.data)) {
+      setEleves(data.data);
+    } else if (Array.isArray(data?.eleves)) {
+      setEleves(data.eleves);
+    } else {
+      console.error("Format inattendu /eleves :", data);
+      setEleves([]);
+    }
+  } catch (err) {
+    console.error("Erreur fetchEleves", err);
+    setEleves([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
   useEffect(() => {
     fetchEleves();
     fetchSubGroups();
@@ -229,7 +261,8 @@ function Eleves() {
             ) : eleves.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-2 text-center text-gray-400 italic">Aucun élève pour le moment.</td></tr>
             ) : (
-              eleves.map((el) => (
+            eleves.map((el) => (
+
                 <tr key={el.id} className="hover:bg-gray-50">
                   <td className="px-4 py-2">{el.firstName}</td>
                   <td className="px-4 py-2">{el.lastName}</td>

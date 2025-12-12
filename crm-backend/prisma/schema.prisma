@@ -54,6 +54,7 @@ model AcademicYear {
 
   createdAt DateTime @default(now())
   deletedAt DateTime?
+  @@index([deletedAt])
 }
 
 model Periode {
@@ -137,6 +138,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
+  @@index([deletedAt])
 }
 
 model RefreshToken {
@@ -231,6 +233,8 @@ model Level {
 
   createdAt DateTime @default(now())
   deletedAt DateTime?
+  // @@index([academicYearId]) // champ inexistant, index supprimé
+  @@index([deletedAt])
 }
 
 // ---------------------------------------------------
@@ -318,6 +322,8 @@ model CourseSession {
 
   createdAt DateTime @default(now())
   deletedAt DateTime?
+  // @@index([groupId]) // champ inexistant, index supprimé
+  @@index([deletedAt])
 }
 
 // ---------------------------------------------------
@@ -389,6 +395,8 @@ model Payment {
 
   createdAt DateTime @default(now())
   deletedAt DateTime?
+  @@index([academicYearId])
+  @@index([deletedAt])
 }
 
 // ---------------------------------------------------
@@ -443,6 +451,9 @@ model Note {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
+  @@index([sessionId])
+  @@index([studentId])
+  @@index([deletedAt])
 }
 
 // ---------------------------------------------------
@@ -464,6 +475,9 @@ model Notification {
 
   createdAt DateTime @default(now())
   deletedAt DateTime?
+  // @@index([studentId]) // champ inexistant, index supprimé
+  // @@index([courseId]) // champ inexistant, index supprimé
+  @@index([deletedAt])
 }
 
 // ---------------------------------------------------
@@ -542,6 +556,8 @@ model GeneratedDocument {
 
   createdAt DateTime @default(now())
   deletedAt DateTime?
+  @@index([academicYearId])
+  @@index([deletedAt])
 }
 
 // ---------------------------------------------------

@@ -1,0 +1,14 @@
+# Plan d’optimisation Eleves.tsx
+
+1. Découper les composants (ligne élève, modale, formulaire)
+2. Extraire les hooks personnalisés (fetch, logique formulaire…)
+3. Corriger les appels API (absences par élève)
+4. Améliorer l’UX de base (loader, messages d’erreur/succès)
+5. Ajouter une recherche simple
+6. Ajouter la pagination
+7. Intégrer React Query pour la gestion des données
+8. Rédiger des tests (plan dans ce fichier)
+
+---
+
+On avancera étape par étape, cochez ou détaillez chaque point au fur et à mesure.

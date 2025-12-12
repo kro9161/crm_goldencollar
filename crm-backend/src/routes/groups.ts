@@ -1,48 +1,66 @@
-// crm-backend/src/routes/groups.ts
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
-
 import { authRequired, requireRole } from "../middlewares/auth.js";
 
 const prisma = new PrismaClient();
 const router = Router();
 
-router.use(authRequired);
-router.use(requireRole("admin", "administratif")); // 🔒 Sécurité
+/**
+ * --- Simple in-memory cache ---
+ * Cache uniquement pour GET /groups sans academicYearId
+ * Invalidation automatique sur POST / PATCH / DELETE
+ */
+let groupsCache: { data: any; expires: number } | null = null;
 
 // ---------------------------------------------------
-// GET — Tous les groupes des années en cours (ou année spécifique)
+// MIDDLEWARES
+// ---------------------------------------------------
+router.use(authRequired);
+router.use(requireRole("admin", "administratif")); // 🔒 Accès restreint
+
+// ---------------------------------------------------
+// GET /groups
+// Groupes des années en cours OU d’une année spécifique
 // ---------------------------------------------------
 router.get("/", async (req, res) => {
   try {
-    const { academicYearId } = req.query;
+    const academicYearId = req.query.academicYearId as string | undefined;
+    const now = Date.now();
 
-    let yearIds: string[] = [];
+    // ♻️ Cache uniquement si aucune année spécifique demandée
+    if (!academicYearId && groupsCache && groupsCache.expires > now) {
+      return res.json(groupsCache.data);
+    }
+
+    let yearIds: string[];
 
     if (academicYearId) {
-      // Filtrer par une année spécifique (mode archivé)
-      yearIds = [academicYearId as string];
+      yearIds = [academicYearId];
     } else {
-      // Récupérer toutes les années en cours (Octobre ET Février)
       const currentYears = await prisma.academicYear.findMany({
-        where: { isCurrent: true, isArchived: false },
-        select: { id: true, name: true, session: true }
+        where: {
+          isCurrent: true,
+          isArchived: false,
+          deletedAt: null,
+        },
+        select: { id: true },
       });
-      yearIds = currentYears.map(y => y.id);
+
+      yearIds = currentYears.map((y) => y.id);
     }
 
     const groups = await prisma.group.findMany({
-      where: { 
+      where: {
         academicYearId: { in: yearIds },
-        deletedAt: null 
+        deletedAt: null,
       },
-      include: { 
-        subGroups: { 
-          where: { deletedAt: null } 
+      include: {
+        subGroups: {
+          where: { deletedAt: null },
         },
         academicYear: {
-          select: { id: true, name: true, session: true }
-        }
+          select: { id: true, name: true, session: true },
+        },
       },
       orderBy: { name: "asc" },
     });
@@ -52,45 +70,67 @@ router.get("/", async (req, res) => {
       name: g.name,
       label: g.label,
       academicYearId: g.academicYearId,
-      academicYear: g.academicYear, // Inclure les infos de l'année (nom, session)
+      academicYear: g.academicYear,
       subGroupCount: g.subGroups.length,
     }));
 
-    res.json(formatted);
+    // 💾 Mise en cache uniquement sans filtre
+    if (!academicYearId) {
+      groupsCache = {
+        data: formatted,
+        expires: now + 60_000,
+      };
+    }
 
+    res.json(formatted);
   } catch (err) {
-    console.error("Erreur GET /groups", err);
-    res.status(500).json({ error: "Erreur chargaement groupes" });
+    console.error("❌ Erreur GET /groups :", err);
+    res.status(500).json({ error: "Erreur chargement groupes" });
   }
 });
 
 // ---------------------------------------------------
-// POST — Créer un groupe
+// Invalidation du cache sur toute écriture
+// ---------------------------------------------------
+["post", "patch", "delete"].forEach((method) => {
+  (router as any)[method]("*", (_req: any, _res: any, next: any) => {
+    groupsCache = null;
+    next();
+  });
+});
+
+// ---------------------------------------------------
+// POST /groups
+// Créer un groupe
 // ---------------------------------------------------
 router.post("/", async (req, res) => {
   try {
     const { name, label, academicYearId } = req.body;
-    if (!academicYearId) {
-      return res.status(400).json({ error: "academicYearId requis" });
+
+    if (!name || !academicYearId) {
+      return res.status(400).json({
+        error: "Champs requis : name, academicYearId",
+      });
     }
 
     const created = await prisma.group.create({
       data: {
-        name,
-        label: label ?? null,
+        name: name.trim(),
+        label: label?.trim() || null,
         academicYearId,
       },
     });
 
     res.status(201).json(created);
   } catch (err) {
-    console.error("Erreur POST /groups", err);
+    console.error("❌ Erreur POST /groups :", err);
     res.status(500).json({ error: "Erreur création groupe" });
   }
 });
 
 // ---------------------------------------------------
-// PATCH — Modifier un groupe
+// PATCH /groups/:id
+// Modifier un groupe
 // ---------------------------------------------------
 router.patch("/:id", async (req, res) => {
   try {
@@ -99,40 +139,44 @@ router.patch("/:id", async (req, res) => {
     const updated = await prisma.group.update({
       where: { id: req.params.id },
       data: {
-        ...(name && { name }),
-        ...(label !== undefined && { label }),
+        ...(name && { name: name.trim() }),
+        ...(label !== undefined && { label: label?.trim() || null }),
       },
     });
 
     res.json(updated);
   } catch (err) {
-    console.error("Erreur PATCH /groups/:id", err);
+    console.error("❌ Erreur PATCH /groups/:id :", err);
     res.status(500).json({ error: "Erreur modification groupe" });
   }
 });
 
 // ---------------------------------------------------
-// DELETE — Supprimer un groupe (soft delete + cascade sous-groupes)
+// DELETE /groups/:id
+// Suppression logique + sous-groupes
 // ---------------------------------------------------
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // Soft delete des sous-groupes associés
+
+    // Soft delete des sous-groupes
     await prisma.subGroup.updateMany({
-      where: { groupId: id, deletedAt: null },
+      where: {
+        groupId: id,
+        deletedAt: null,
+      },
       data: { deletedAt: new Date() },
     });
-    
+
     // Soft delete du groupe
     await prisma.group.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
 
-    res.json({ message: "Groupe supprimé" });
+    res.json({ ok: true });
   } catch (err) {
-    console.error("Erreur DELETE /groups/:id", err);
+    console.error("❌ Erreur DELETE /groups/:id :", err);
     res.status(500).json({ error: "Erreur suppression groupe" });
   }
 });

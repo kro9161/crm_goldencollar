@@ -1,8 +1,7 @@
-// crm-backend/src/routes/importExport.ts
-import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-import { authRequired, requireRole } from '../middlewares/auth.js';
+import { Router } from "express";
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+import { authRequired, requireRole } from "../middlewares/auth.js";
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -10,21 +9,28 @@ const router = Router();
 router.use(authRequired);
 router.use(requireRole("admin"));
 
-/* ---------------------------------------------------
+/* ===================================================
    POST /import/json
---------------------------------------------------- */
-router.post('/json', async (req, res) => {
+   Import structuré (groupes, sous-groupes, cours, users)
+=================================================== */
+router.post("/json", async (req, res) => {
   try {
-    const payload = req.body || {};
+    const payload = req.body ?? {};
 
-    // 1️⃣ Année scolaire active obligatoire
-    const year = await prisma.academicYear.findFirst({
-      where: { isCurrent: true, isArchived: false }
+    /* -------------------------------
+       1️⃣ Année académique courante
+    -------------------------------- */
+    const academicYear = await prisma.academicYear.findFirst({
+      where: {
+        isCurrent: true,
+        isArchived: false,
+        deletedAt: null,
+      },
     });
 
-    if (!year) {
+    if (!academicYear) {
       return res.status(400).json({
-        error: "Aucune année scolaire active. Créez une AcademicYear d'abord."
+        error: "Aucune année académique active",
       });
     }
 
@@ -32,29 +38,34 @@ router.post('/json', async (req, res) => {
       groupsCreated: 0,
       subGroupsCreated: 0,
       coursesCreated: 0,
-      professorsLinked: 0,
       coursesLinkedToSubGroups: 0,
+      professorsLinked: 0,
       usersCreated: 0,
       usersAssigned: 0,
     };
 
-    /* ---------------------------------------------------
-       2️⃣ IMPORT GROUPS + SUBGROUPS + COURSES
-    --------------------------------------------------- */
+    /* ===================================================
+       2️⃣ GROUPES / SOUS-GROUPES / COURS
+    =================================================== */
     if (Array.isArray(payload.groups)) {
       for (const g of payload.groups) {
-
-        // Groupe (unique par année scolaire)
+        // ---- Groupe ----
         const group = await prisma.group.upsert({
           where: {
-            academicYearId_name_deletedAt: { academicYearId: year.id, name: g.name, deletedAt: null }
+            academicYearId_name_deletedAt: {
+              academicYearId: academicYear.id,
+              name: g.name,
+              deletedAt: null,
+            },
           },
-          update: { label: g.label || null },
+          update: {
+            label: g.label ?? null,
+          },
           create: {
             name: g.name,
-            label: g.label || null,
-            academicYearId: year.id,
-          }
+            label: g.label ?? null,
+            academicYearId: academicYear.id,
+          },
         });
 
         report.groupsCreated++;
@@ -62,62 +73,61 @@ router.post('/json', async (req, res) => {
         // ---- Sous-groupes ----
         if (Array.isArray(g.subGroups)) {
           for (const sg of g.subGroups) {
-
             const subGroup = await prisma.subGroup.upsert({
               where: {
                 groupId_code_deletedAt: {
                   groupId: group.id,
                   code: sg.code,
-                  deletedAt: null
-                }
+                  deletedAt: null,
+                },
               },
               update: {
-                label: sg.label || null,
-                groupId: group.id,
+                label: sg.label ?? null,
               },
               create: {
                 code: sg.code,
-                label: sg.label || null,
+                label: sg.label ?? null,
                 groupId: group.id,
-              }
+              },
             });
 
             report.subGroupsCreated++;
 
-            // ---- Modules / Cours ----
+            // ---- Cours / modules ----
             if (Array.isArray(sg.modules)) {
               for (const m of sg.modules) {
-
-                // Cherche un cours EXISTANT dans CETTE année
                 let course = await prisma.course.findFirst({
                   where: {
                     name: m.name,
-                    academicYearId: year.id
-                  }
+                    academicYearId: academicYear.id,
+                    deletedAt: null,
+                  },
                 });
 
                 if (!course) {
                   course = await prisma.course.create({
                     data: {
                       name: m.name,
-                      academicYearId: year.id
-                    }
+                      academicYearId: academicYear.id,
+                    },
                   });
 
                   report.coursesCreated++;
                 }
 
-                // Connecter course → subgroup
+                // Lier cours ↔ sous-groupe
                 await prisma.course.update({
                   where: { id: course.id },
                   data: {
-                    subGroups: { connect: [{ id: subGroup.id }] }
-                  }
+                    subGroups: {
+                      connect: { id: subGroup.id },
+                    },
+                  },
                 });
 
                 report.coursesLinkedToSubGroups++;
 
-                // ---- PROF ----
+                // ---- Professeur ----
                 if (m.professorEmail) {
                   const prof = await prisma.user.upsert({
                     where: { email: m.professorEmail },
@@ -128,14 +138,16 @@ router.post('/json', async (req, res) => {
                       lastName: m.professorLastName || "",
                       role: "prof",
                       password: bcrypt.hashSync("Prof123!", 10),
-                    }
+                    },
                   });
 
                   await prisma.course.update({
                     where: { id: course.id },
                     data: {
-                      professors: { connect: [{ id: prof.id }] }
-                    }
+                      professors: {
+                        connect: { id: prof.id },
+                      },
+                    },
                   });
 
                   report.professorsLinked++;
@@ -147,47 +159,57 @@ router.post('/json', async (req, res) => {
       }
     }
 
-    /* ---------------------------------------------------
-       3️⃣ IMPORT USERS (élèves / profs / admin)
-    --------------------------------------------------- */
+    /* ===================================================
+       3️⃣ UTILISATEURS (élèves / profs)
+    =================================================== */
     if (Array.isArray(payload.users)) {
       for (const u of payload.users) {
-
-        const existing = await prisma.user.findUnique({
-          where: { email: u.email }
+        const existingUser = await prisma.user.findUnique({
+          where: { email: u.email },
         });
 
-        // Trouver le subgroup (code non unique → on prend le premier trouvé)
         let subGroup = null;
         if (u.subGroupCode) {
           subGroup = await prisma.subGroup.findFirst({
-            where: { code: u.subGroupCode }
+            where: { code: u.subGroupCode, deletedAt: null },
           });
         }
 
-        if (!existing) {
-          const pwd = Math.random().toString(36).slice(2, 10) + "A1!";
+        if (!existingUser) {
+          const password =
+            Math.random().toString(36).slice(2, 10) + "A1!";
 
-          await prisma.user.create({
+          const user = await prisma.user.create({
             data: {
               email: u.email,
               firstName: u.firstName || "",
               lastName: u.lastName || "",
               role: u.role || "eleve",
-              password: bcrypt.hashSync(pwd, 10),
+              password: bcrypt.hashSync(password, 10),
               subGroups: subGroup
                 ? { connect: { id: subGroup.id } }
                 : undefined,
-            }
+            },
           });
+
+          if (user.role === "eleve") {
+            await prisma.studentEnrollment.create({
+              data: {
+                studentId: user.id,
+                academicYearId: academicYear.id,
+                role: "eleve",
+                mainSubGroupId: subGroup?.id,
+              },
+            });
+          }
 
           report.usersCreated++;
         } else if (subGroup) {
           await prisma.user.update({
-            where: { email: u.email },
+            where: { id: existingUser.id },
             data: {
-              subGroups: { connect: { id: subGroup.id } }
-            }
+              subGroups: { connect: { id: subGroup.id } },
+            },
           });
 
           report.usersAssigned++;
@@ -195,28 +217,30 @@ router.post('/json', async (req, res) => {
       }
     }
 
-    return res.json({ status: "ok", report });
-
+    res.json({ status: "ok", report });
   } catch (err) {
     console.error("❌ Erreur import JSON :", err);
-    return res.status(500).json({ error: "Erreur lors de l'import JSON" });
+    res.status(500).json({ error: "Erreur import JSON" });
   }
 });
 
-/* ---------------------------------------------------
-   EXPORT JSON COMPLET
---------------------------------------------------- */
+/* ===================================================
+   GET /import/export/json
+   Export complet (debug / sauvegarde)
+=================================================== */
 router.get("/export/json", async (_req, res) => {
   const data = {
-    years: await prisma.academicYear.findMany(),
-    groups: await prisma.group.findMany({ include: { subGroups: true } }),
+    academicYears: await prisma.academicYear.findMany(),
+    groups: await prisma.group.findMany({
+      include: { subGroups: true },
+    }),
     users: await prisma.user.findMany(),
     courses: await prisma.course.findMany({
       include: {
         subGroups: true,
         professors: true,
-        academicYear: true
-      }
+        academicYear: true,
+      },
     }),
     rooms: await prisma.room.findMany(),
     sessions: await prisma.courseSession.findMany(),

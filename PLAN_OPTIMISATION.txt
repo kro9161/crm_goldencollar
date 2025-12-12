@@ -1,0 +1,42 @@
+
+# Plan d'optimisation CRM École (décembre 2025)
+
+## ✅ Historique des optimisations réalisées
+- [x] Backend : Route /eleves optimisée (utilisation de `select` strict et limitation des `include` pour ne renvoyer que les champs nécessaires à l’UI)
+
+
+## Backend
+- [x] Utiliser `select` strict sur toutes les routes critiques (ne renvoyer que les champs nécessaires à l’UI)
+- [x] Limiter les `include` Prisma (éviter de charger des sous-objets non affichés) sur les routes critiques
+- [x] Ajouter des filtres sur les endpoints (nom, email, etc.) (/users fait, à généraliser si besoin)
+- [x] Ajouter un cache mémoire pour les données peu volatiles (groupes, filières, années)
+- [x] Indexer les champs de filtre principaux (academicYearId, deletedAt, etc.)
+- [x] (Optionnel) Ajouter la pagination sur les routes listant beaucoup d’éléments
+
+## Frontend
+- [x] Charger les données uniquement à l’ouverture des pages/modales (éviter les fetchs globaux)
+- [x] Afficher un skeleton ou loader progressif sur les listes
+- [x] Éviter les re-fetchs inutiles (mémoriser les données déjà chargées)
+- [ ] (Optionnel) Implémenter la pagination sur les listes longues
+- [ ] (Optionnel) Utiliser la virtualisation pour les listes très longues
+
+## Base de données
+- [ ] Vérifier les index sur les champs de filtre
+- [ ] Analyser les requêtes lentes (logs Prisma/Postgres)
+
+---
+
+## Priorité immédiate (décembre 2025)
+1. **Backend :**
+   - Utiliser `select` strict et limiter les `include` sur toutes les routes (surtout `/eleves`, `/groups`, `/courses`, `/users`, `/filieres`).
+   - Ajouter des filtres sur les endpoints (nom, email, etc.) pour éviter de tout charger.
+2. **Frontend :**
+   - Charger les données uniquement à l’ouverture des pages/modales.
+   - Afficher un loader/skeleton sur les listes.
+   - Éviter les fetchs globaux et les rechargements inutiles.
+
+La pagination n’est pas prioritaire si la BDD est vide, mais elle sera indispensable dès que tu auras plus de 100-200 entrées dans une table.
+
+---
+
+On peut cocher chaque point dès qu’il est traité. Dis-moi par lequel tu veux commencer !
