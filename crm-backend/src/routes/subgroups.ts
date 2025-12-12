@@ -153,6 +153,7 @@ router.get("/", async (req, res) => {
             }
           }
         },
+        subGroupFilieres: { include: { filiere: true } },
       },
       orderBy: { code: "asc" },
     });
